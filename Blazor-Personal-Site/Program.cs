@@ -1,4 +1,5 @@
 using Blazor_Personal_Site.Components;
+using MudBlazor.Services;
 
 namespace Blazor_Personal_Site
 {
@@ -7,6 +8,9 @@ namespace Blazor_Personal_Site
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            // Add MudBlazor services
+            builder.Services.AddMudServices();
 
             // Add services to the container.
             builder.Services.AddRazorComponents()
