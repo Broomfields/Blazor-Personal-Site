@@ -1,0 +1,41 @@
+@page "/hero"
+
+<div class="hero">
+    <div class="hero-content">
+        @if (!string.IsNullOrEmpty(Title))
+        {
+            <h1>@Title</h1>
+        }
+        @if (!string.IsNullOrEmpty(ImageUrl))
+        {
+            <img src="@ImageUrl" alt="Hero Image" class="hero-image" />
+        }
+        @if (!string.IsNullOrEmpty(Subtitle))
+        {
+            <p>@Subtitle</p>
+        }
+        @if (!string.IsNullOrEmpty(ButtonText))
+        {
+            <button @onclick="OnButtonClick">@ButtonText</button>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string? Title { get; set; } = "Welcome to My Site";
+
+    [Parameter]
+    public string? Subtitle { get; set; } = "This is a subtitle";
+
+    [Parameter]
+    public string? ImageUrl { get; set; } = "default-image.jpg";
+
+    [Parameter]
+    public string? ButtonText { get; set; } = "Learn More";
+
+    private void OnButtonClick()
+    {
+        // Handle button click event
+    }
+}
