@@ -10,7 +10,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/Blazor-Personal-Site/bin/Debug/net8.0/`Blazor-Personal-Site.dll",
+            "program": "${workspaceFolder}/Blazor-Personal-Site/bin/Debug/net8.0/Blazor-Personal-Site.dll",
             "args": [],
             "cwd": "${workspaceFolder}/Blazor-Personal-Site",
             "stopAtEntry": false,
