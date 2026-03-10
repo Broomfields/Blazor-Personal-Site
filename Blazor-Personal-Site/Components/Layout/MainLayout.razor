@@ -1,6 +1,6 @@
 ﻿@inherits LayoutComponentBase
 
-<MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
+<MudThemeProvider Theme="@_theme" IsDarkMode="true" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -9,7 +9,6 @@
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
         <MudText Typo="Typo.h5" Class="ml-3">Shaun Broomfield</MudText>
         <MudSpacer />
-        <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
     </MudAppBar>
     <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
         <NavMenu />
@@ -28,7 +27,6 @@
 
 @code {
     private bool _drawerOpen = false;
-    private bool _isDarkMode = true;
     private MudTheme? _theme = null;
 
     protected override void OnInitialized()
@@ -49,55 +47,50 @@
         _drawerOpen = !_drawerOpen;
     }
 
-    private void DarkModeToggle()
-    {
-        _isDarkMode = !_isDarkMode;
-    }
-
+    // _lightPalette is intentionally kept — reserved for future components that
+    // benefit from a light surface (e.g. an inline markdown document viewer).
     private readonly PaletteLight _lightPalette = new()
     {
-        Black = "#110e2d",
-        AppbarText = "#424242",
-        AppbarBackground = "rgba(255,255,255,0.8)",
-        DrawerBackground = "#ffffff",
-        GrayLight = "#e8e8e8",
-        GrayLighter = "#f9f9f9",
+        // Icelandic Volcanic Terrain palette — light mode
+        Primary = "#5E7A2A",                          // Crater Moss — deep rich green for light bg
+        Black = "#2A2723",                            // Ash Plain instead of pure black
+        AppbarText = "#2A2723",                       // Ash Plain — dark text on light bar
+        AppbarBackground = "rgba(245,242,236,0.9)",   // Warm off-white with transparency
+        DrawerBackground = "#F5F2EC",                 // Warm white
+        GrayLight = "#D4D0C8",                        // Warm light grey
+        GrayLighter = "#F0EDE6",                      // Very light warm grey
     };
 
     private readonly PaletteDark _darkPalette = new()
     {
-        Primary = "#7e6fff",
-        Surface = "#1e1e2d",
-        Background = "#1a1a27",
-        BackgroundGray = "#151521",
-        AppbarText = "#92929f",
-        AppbarBackground = "rgba(26,26,39,0.8)",
-        DrawerBackground = "#1a1a27",
-        ActionDefault = "#74718e",
-        ActionDisabled = "#9999994d",
-        ActionDisabledBackground = "#605f6d4d",
-        TextPrimary = "#b2b0bf",
-        TextSecondary = "#92929f",
-        TextDisabled = "#ffffff33",
-        DrawerIcon = "#92929f",
-        DrawerText = "#92929f",
-        GrayLight = "#2a2833",
-        GrayLighter = "#1e1e2d",
-        Info = "#4a86ff",
-        Success = "#3dcb6c",
+        // Icelandic Volcanic Terrain palette — dark mode
+        Primary = "#7A9E35",                          // Highland Green — interactive elements
+        Surface = "#3D3A35",                          // Tephra — card / panel backgrounds
+        Background = "#2A2723",                       // Ash Plain — page background
+        BackgroundGray = "#1F1D1A",                   // Below-ash-plain depth layer
+        AppbarText = "#E8E4DC",                       // Primary Text
+        AppbarBackground = "rgba(42,39,35,0.85)",     // Ash Plain with transparency
+        DrawerBackground = "#2A2723",                 // Ash Plain
+        ActionDefault = "#A09890",                    // Muted Text
+        ActionDisabled = "#A098904D",                 // Muted Text — transparent
+        ActionDisabledBackground = "#504C454D",       // Cinder — transparent
+        TextPrimary = "#E8E4DC",                      // Warm off-white body copy
+        TextSecondary = "#A09890",                    // Muted Text — captions / labels
+        TextDisabled = "#E8E4DC33",                   // Primary Text — transparent
+        DrawerIcon = "#A09890",                       // Muted Text
+        DrawerText = "#A09890",                       // Muted Text
+        GrayLight = "#504C45",                        // Cinder — elevated surfaces
+        GrayLighter = "#3D3A35",                      // Tephra
+        Info = "#8A9BA8",                             // Meltwater — cool secondary accent
+        Success = "#9CC240",                          // Lichen Flash — vivid green
         Warning = "#ffb545",
         Error = "#ff3f5f",
-        LinesDefault = "#33323e",
-        TableLines = "#33323e",
-        Divider = "#292838",
-        OverlayLight = "#1e1e2d80",
+        LinesDefault = "#504C45",                     // Cinder
+        TableLines = "#504C45",                       // Cinder
+        Divider = "#3D3A35",                          // Tephra
+        OverlayLight = "#2A272380",                   // Ash Plain — semi-transparent
     };
 
-    public string DarkLightModeButtonIcon => _isDarkMode switch
-    {
-        true => Icons.Material.Rounded.AutoMode,
-        false => Icons.Material.Outlined.DarkMode,
-    };
 }
 
 
