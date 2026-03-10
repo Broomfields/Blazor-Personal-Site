@@ -1,0 +1,196 @@
+/* ──────────────────────────────────────────────
+   Feature Navigation — timeline bubble nav
+   ────────────────────────────────────────────── */
+
+.feature-nav-section {
+    padding: 56px 24px 140px; /* tall bottom padding so speech bubbles have room */
+    position: relative;
+    overflow: visible;
+}
+
+/* Track: horizontal flex row with a line drawn through the centre */
+.feature-nav-track {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: clamp(32px, 7vw, 96px);
+}
+
+.feature-nav-track::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 2px;
+    transform: translateY(-50%);
+    background: linear-gradient(
+        to right,
+        transparent,
+        var(--mud-palette-primary) 15%,
+        var(--mud-palette-primary) 85%,
+        transparent
+    );
+    opacity: 0.3;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* ── Item wrapper — this IS the anchor ── */
+.feature-nav-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 1;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+/* ── Pill button ── */
+.feature-nav-btn {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 26px;
+    border-radius: 999px;
+    background-color: var(--mud-palette-surface);
+    border: 2px solid var(--mud-palette-primary);
+    transition:
+        background-color 0.2s ease,
+        box-shadow 0.2s ease,
+        color 0.2s ease;
+    position: relative;
+    z-index: 1;
+}
+
+/* Hover: fill the pill + double-ring glow */
+.feature-nav-item:hover .feature-nav-btn {
+    background-color: var(--mud-palette-primary);
+    color: #fff;
+    box-shadow:
+        0 0 0 3px var(--mud-palette-background),
+        0 0 0 5px var(--mud-palette-primary);
+}
+
+.feature-nav-btn-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    line-height: 1;
+}
+
+/* ── Speech bubble card ── */
+.feature-nav-card {
+    position: absolute;
+    top: calc(100% + 12px); /* stem fills this gap exactly */
+    left: 50%;
+    transform: translateX(-50%) translateY(-6px);
+    width: 230px;
+
+    background: var(--mud-palette-surface);
+    border-radius: 12px;
+    padding: 14px 16px;
+    filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.35));
+
+    opacity: 0;
+    pointer-events: none;
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease;
+    z-index: 20;
+}
+
+/* Triangle stem — points upward from card top to button */
+.feature-nav-card::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 12px solid var(--mud-palette-surface);
+}
+
+/* Reveal on hover */
+.feature-nav-item:hover .feature-nav-card {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Card typography */
+.feature-card-title {
+    margin: 0 0 6px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--mud-palette-text-primary);
+}
+
+.feature-card-body {
+    margin: 0 0 10px;
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: var(--mud-palette-text-secondary);
+}
+
+.feature-card-explore {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--mud-palette-primary);
+    letter-spacing: 0.03em;
+}
+
+/* ── Responsive: stack on small screens ── */
+@media (max-width: 600px) {
+    .feature-nav-section {
+        padding-bottom: 48px;
+    }
+
+    .feature-nav-track {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .feature-nav-track::before {
+        display: none;
+    }
+
+    .feature-nav-item {
+        width: 100%;
+        max-width: 300px;
+    }
+
+    .feature-nav-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* On mobile: always show the card, no hover needed */
+    .feature-nav-card {
+        position: static;
+        opacity: 1;
+        pointer-events: auto;
+        transform: none;
+        width: 100%;
+        margin-top: 8px;
+        filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2));
+    }
+
+    .feature-nav-card::before {
+        display: none;
+    }
+
+    .feature-nav-item:hover .feature-nav-btn {
+        box-shadow: none;
+    }
+}

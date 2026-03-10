@@ -1,50 +1,45 @@
-<MudPaper Elevation="0" Class="hero-section pa-8 mb-6" Style="background: transparent;">
-    <MudGrid Justify="Justify.Center" AlignItems="AlignItems.Center">
+<MudContainer MaxWidth="MaxWidth.Large" Class="hero-section py-12">
+    <MudGrid Justify="Justify.Center" AlignItems="AlignItems.Center" Spacing="6">
 
-        <MudItem xs="12" sm="4" Class="d-flex justify-center">
-            @if (!string.IsNullOrEmpty(ImageUrl))
-            {
-                <MudAvatar Style="width: 220px; height: 220px; border: 3px solid var(--mud-palette-primary);">
-                    <MudImage Src="@ImageUrl" Alt="Profile photo" ObjectFit="ObjectFit.Cover" Width="220" Height="220" />
-                </MudAvatar>
-            }
+        <MudItem xs="12" sm="4" md="3" Class="d-flex justify-center">
+            <MudAvatar Class="hero-avatar">
+                <MudImage Src="images/hero.jpeg"
+                          Alt="Shaun Broomfield"
+                          ObjectFit="ObjectFit.Cover"
+                          Width="200"
+                          Height="200" />
+            </MudAvatar>
         </MudItem>
 
-        <MudItem xs="12" sm="8">
-            @if (!string.IsNullOrEmpty(Title))
-            {
-                <MudText Typo="Typo.h3" GutterBottom="true">@Title</MudText>
-            }
-            @if (!string.IsNullOrEmpty(Subtitle))
-            {
-                <MudText Typo="Typo.h6" Class="mb-6" Style="opacity: 0.75;">@Subtitle</MudText>
-            }
-            @if (!string.IsNullOrEmpty(ButtonText))
-            {
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" OnClick="OnButtonClick">
-                    @ButtonText
+        <MudItem xs="12" sm="8" md="9">
+            <MudText Typo="Typo.h2" Class="hero-name mb-1">Hey, I'm Shaun.</MudText>
+            <MudText Typo="Typo.subtitle1" Class="hero-tagline mb-5">
+                Programmer &middot; Maker &middot; Storyteller
+            </MudText>
+            <MudText Typo="Typo.body1" Class="hero-intro mb-6">
+                I'm a programmer with an interest in making things. On this site you'll find software
+                projects (utilities, toy games, mods), 3D-printed builds, and my creative writing —
+                world-building and stories across several worlds in development.
+            </MudText>
+            <div class="hero-socials">
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Custom.Brands.GitHub"
+                           Href="https://github.com/Broomfields"
+                           Target="_blank"
+                           Class="mr-3 mb-2">
+                    GitHub
                 </MudButton>
-            }
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Custom.Brands.LinkedIn"
+                           Href="https://www.linkedin.com/in/shaunbroomfield/"
+                           Target="_blank"
+                           Class="mb-2">
+                    LinkedIn
+                </MudButton>
+            </div>
         </MudItem>
 
     </MudGrid>
-</MudPaper>
-
-@code {
-    [Parameter]
-    public string? Title { get; set; } = "Welcome to My Site";
-
-    [Parameter]
-    public string? Subtitle { get; set; } = "This is a subtitle";
-
-    [Parameter]
-    public string? ImageUrl { get; set; }
-
-    [Parameter]
-    public string? ButtonText { get; set; } = "Learn More";
-
-    private void OnButtonClick()
-    {
-        // Handle button click event
-    }
-}
+</MudContainer>

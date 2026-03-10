@@ -1,0 +1,39 @@
+/* ══════════════════════════════════════════════
+   site.css — global styles for Shaun Broomfield's portfolio
+   ══════════════════════════════════════════════ */
+
+/* ── Hero ── */
+.hero-section {
+    padding-top: 48px;
+    padding-bottom: 32px;
+}
+
+.hero-avatar {
+    width: 200px !important;
+    height: 200px !important;
+    border: 3px solid var(--mud-palette-primary);
+}
+
+.hero-name {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.hero-tagline {
+    opacity: 0.6;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.85rem !important;
+}
+
+.hero-intro {
+    max-width: 600px;
+    line-height: 1.8 !important;
+    opacity: 0.85;
+}
+
+.hero-socials {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
