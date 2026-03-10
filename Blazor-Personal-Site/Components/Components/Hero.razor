@@ -1,25 +1,34 @@
-@page "/hero"
+<MudPaper Elevation="0" Class="hero-section pa-8 mb-6" Style="background: transparent;">
+    <MudGrid Justify="Justify.Center" AlignItems="AlignItems.Center">
 
-<div class="hero">
-    <div class="hero-content">
-        @if (!string.IsNullOrEmpty(Title))
-        {
-            <h1>@Title</h1>
-        }
-        @if (!string.IsNullOrEmpty(ImageUrl))
-        {
-            <img src="@ImageUrl" alt="Hero Image" class="hero-image" />
-        }
-        @if (!string.IsNullOrEmpty(Subtitle))
-        {
-            <p>@Subtitle</p>
-        }
-        @if (!string.IsNullOrEmpty(ButtonText))
-        {
-            <button @onclick="OnButtonClick">@ButtonText</button>
-        }
-    </div>
-</div>
+        <MudItem xs="12" sm="4" Class="d-flex justify-center">
+            @if (!string.IsNullOrEmpty(ImageUrl))
+            {
+                <MudAvatar Style="width: 220px; height: 220px; border: 3px solid var(--mud-palette-primary);">
+                    <MudImage Src="@ImageUrl" Alt="Profile photo" ObjectFit="ObjectFit.Cover" Width="220" Height="220" />
+                </MudAvatar>
+            }
+        </MudItem>
+
+        <MudItem xs="12" sm="8">
+            @if (!string.IsNullOrEmpty(Title))
+            {
+                <MudText Typo="Typo.h3" GutterBottom="true">@Title</MudText>
+            }
+            @if (!string.IsNullOrEmpty(Subtitle))
+            {
+                <MudText Typo="Typo.h6" Class="mb-6" Style="opacity: 0.75;">@Subtitle</MudText>
+            }
+            @if (!string.IsNullOrEmpty(ButtonText))
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" OnClick="OnButtonClick">
+                    @ButtonText
+                </MudButton>
+            }
+        </MudItem>
+
+    </MudGrid>
+</MudPaper>
 
 @code {
     [Parameter]
@@ -29,7 +38,7 @@
     public string? Subtitle { get; set; } = "This is a subtitle";
 
     [Parameter]
-    public string? ImageUrl { get; set; } = "default-image.jpg";
+    public string? ImageUrl { get; set; }
 
     [Parameter]
     public string? ButtonText { get; set; } = "Learn More";
