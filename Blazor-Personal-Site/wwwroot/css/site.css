@@ -2,6 +2,27 @@
    site.css — global styles for Shaun Broomfield's portfolio
    ══════════════════════════════════════════════ */
 
+/* ── Icelandic Volcanic Terrain — Colour Palette ── */
+:root {
+    /* Foundation */
+    --color-ash-plain:      #2A2723;
+    --color-tephra:         #3D3A35;
+    --color-cinder:         #504C45;
+
+    /* Moss & Vegetation */
+    --color-crater-moss:    #5E7A2A;
+    --color-highland-green: #7A9E35;
+    --color-lichen-flash:   #9CC240;
+
+    /* Glacial Water */
+    --color-meltwater:      #8A9BA8;
+    --color-glacial-silt:   #B0BCCA;
+
+    /* Text */
+    --color-text-primary:   #E8E4DC;
+    --color-text-muted:     #A09890;
+}
+
 /* ── Hero ── */
 .hero-section {
     padding-top: 48px;
