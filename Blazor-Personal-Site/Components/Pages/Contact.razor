@@ -1,0 +1,32 @@
+@page "/contact"
+
+<PageTitle>Contact — Shaun Broomfield</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="py-8">
+    <MudText Typo="Typo.h3" Class="mb-2">Get in Touch</MudText>
+    <MudText Typo="Typo.body1" Style="opacity: 0.75;" Class="mb-8">
+        The best places to find me are GitHub and LinkedIn.
+    </MudText>
+
+    <MudStack Spacing="3">
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Custom.Brands.GitHub"
+                   Href="https://github.com/Broomfields"
+                   Target="_blank"
+                   FullWidth="true"
+                   Size="Size.Large">
+            github.com/Broomfields
+        </MudButton>
+
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Custom.Brands.LinkedIn"
+                   Href="https://www.linkedin.com/in/shaunbroomfield/"
+                   Target="_blank"
+                   FullWidth="true"
+                   Size="Size.Large">
+            linkedin.com/in/shaunbroomfield
+        </MudButton>
+    </MudStack>
+</MudContainer>
