@@ -1,0 +1,150 @@
+/* ──────────────────────────────────────────────
+   Career Page
+   ────────────────────────────────────────────── */
+
+.career-page {
+    padding-top: 48px;
+    padding-bottom: 64px;
+}
+
+/* ── Header ── */
+.career-header {
+    border-left: 3px solid var(--mud-palette-primary);
+    padding-left: 16px;
+}
+
+.career-title {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.career-subtitle {
+    opacity: 0.6;
+}
+
+/* ── Employer Cards ── */
+.career-card {
+    height: 100%;
+    background: var(--mud-palette-surface);
+    border-radius: 12px;
+    padding: 24px;
+    border-left: 3px solid var(--mud-palette-primary);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transition:
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+.career-card:hover {
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 4px 20px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+}
+
+.career-company {
+    margin: 0 0 12px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--mud-palette-text-primary);
+}
+
+.career-roles {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.career-role {
+    font-size: 0.85rem;
+    color: var(--mud-palette-text-secondary);
+}
+
+/* Promoted role shown in Highland Green */
+.career-role--promoted {
+    color: var(--color-highland-green);
+    font-weight: 600;
+}
+
+/* Small upward arrow between roles to indicate progression */
+.career-role-arrow {
+    font-size: 0.75rem;
+    color: var(--mud-palette-primary);
+    opacity: 0.5;
+    line-height: 1;
+}
+
+/* ── Resume Section ── */
+.career-resume-section {
+    padding-top: 16px;
+    text-align: center;
+}
+
+.career-resume-intro {
+    margin: 0 auto 48px;
+    max-width: 400px;
+    opacity: 0.65;
+    line-height: 1.7;
+}
+
+/* Pill centred on a fading line — mirrors FeatureNav track */
+.career-resume-track {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 24px;
+}
+
+.career-resume-track::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+    background: linear-gradient(
+        to right,
+        transparent,
+        var(--mud-palette-primary) 20%,
+        var(--mud-palette-primary) 80%,
+        transparent
+    );
+    opacity: 0.25;
+    pointer-events: none;
+}
+
+.career-resume-pill {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 26px;
+    border-radius: 999px;
+    background-color: var(--mud-palette-surface);
+    border: 2px solid var(--mud-palette-primary);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    text-decoration: none;
+    color: var(--mud-palette-text-primary);
+    transition:
+        background-color 0.2s ease,
+        box-shadow 0.2s ease,
+        color 0.2s ease;
+}
+
+.career-resume-pill:hover {
+    background-color: var(--mud-palette-primary);
+    color: #fff;
+    box-shadow:
+        0 0 0 3px var(--mud-palette-background),
+        0 0 0 5px var(--mud-palette-primary);
+}
+
+.career-resume-pill-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    line-height: 1;
+}

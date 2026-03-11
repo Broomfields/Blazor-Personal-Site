@@ -1,0 +1,16 @@
+/* ──────────────────────────────────────────────
+   App Footer — copyright line
+   ────────────────────────────────────────────── */
+
+.app-footer {
+    text-align: center;
+    padding: 20px 16px 24px;
+    border-top: 1px solid var(--color-tephra);
+    opacity: 0.45;
+}
+
+.app-footer-text {
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+    letter-spacing: 0.06em;
+}

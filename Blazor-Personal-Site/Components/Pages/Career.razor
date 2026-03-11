@@ -1,0 +1,53 @@
+@page "/career"
+
+<PageTitle>Career — Shaun Broomfield</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="career-page">
+
+    <div class="career-header mb-10">
+        <MudText Typo="Typo.h3" Class="career-title mb-2">Career</MudText>
+        <MudText Typo="Typo.body1" Class="career-subtitle">
+            My professional path as a software engineer.
+        </MudText>
+    </div>
+
+    <CareerTimeline>
+
+        <CareerTimelineEntry
+            Company="Labman Automation"
+            DateRange="2018 — 2019"
+            Role="Apprentice Software Engineer"
+            Side="left" />
+
+        <CareerTimelineEntry
+            Company="Tascomp Limited"
+            DateRange="2019 — 2024"
+            PreviousRole="Apprentice Software Engineer"
+            Role="Software Engineer"
+            Side="right" />
+
+        <CareerTimelineEntry
+            Company="DEF Software"
+            DateRange="2024 — Present"
+            Role="Business Logic Developer"
+            Side="left" />
+
+    </CareerTimeline>
+    <div class="py-6"></div>
+    <div class="career-resume-section">
+        <MudText Typo="Typo.body1" Class="career-resume-intro">
+            If you'd like the full picture, my resume is available below.
+        </MudText>
+        <div class="py-2"></div>
+        <div class="career-resume-track">
+            <a class="career-resume-pill"
+               href="https://github.com/Broomfields/Resume/raw/main/LaTeX/Resume/Resume%20-%20Shaun%20Broomfield.pdf"
+               target="_blank"
+               rel="noopener noreferrer">
+                <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" />
+                <span class="career-resume-pill-label">Resume</span>
+            </a>
+        </div>
+    </div>
+
+</MudContainer>

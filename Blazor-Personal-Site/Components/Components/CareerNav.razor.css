@@ -1,0 +1,82 @@
+/* ──────────────────────────────────────────────
+   Career Nav — gradient pool section on home page
+   ────────────────────────────────────────────── */
+
+/*
+ * The section itself is a dark gradient that fades in from above and out below,
+ * blending seamlessly with the page background rather than sitting as a
+ * distinct UI block. No separator, no label — just a tonal shift.
+ */
+.career-nav-section {
+    /* Tight top so the dark zone begins close to the hobby pills.
+       Large bottom so the button sits entrenched well above the page edge. */
+    padding: 6rem 1.5rem 6rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+
+    /* Full-width bleed — side margins cancel px-4 on MudMainContent */
+    margin-left: -16px;
+    margin-right: -16px;
+
+    /*
+     * Gradient settles into its dark tone quickly, then holds all the
+     * way to the bottom. No bottom fade — this is the last section.
+     */
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        rgba(10, 9, 7, 0.22) 20%,
+        rgba(10, 9, 7, 0.25) 100%
+    );
+}
+
+/*
+ * Pill uses muted Tephra/Cinder tones rather than Highland Green so it
+ * doesn't compete visually with the hobby section above.
+ */
+.career-nav-pill {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 26px;
+    border-radius: 999px;
+    background-color: transparent;
+    border: 2px solid var(--color-cinder);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    text-decoration: none;
+    color: var(--color-text-muted);
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+}
+
+.career-nav-pill:hover {
+    background-color: var(--color-tephra);
+    border-color: var(--color-text-muted);
+    color: var(--color-text-primary);
+}
+
+.career-nav-pill-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    line-height: 1;
+}
+
+/* ── Footer — pinned to bottom-left of the dark section ── */
+.career-nav-footer {
+    position: absolute;
+    bottom: 0;
+    left: 16px; /* aligns with page content edge, accounting for negative margins */
+}
+
+/* Override AppFooter's centred layout for this context */
+.career-nav-footer ::deep .app-footer {
+    text-align: left;
+    border-top: none;
+    padding: 0 0 16px 8px;
+}
