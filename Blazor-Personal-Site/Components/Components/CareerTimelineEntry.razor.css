@@ -1,0 +1,163 @@
+/* ──────────────────────────────────────────────
+   Career Timeline Entry — individual node + card
+   ────────────────────────────────────────────── */
+
+/* Three-column grid: [left card slot] [node] [right card slot] */
+.timeline-entry {
+    display: grid;
+    grid-template-columns: 1fr 48px 1fr;
+    align-items: center;
+    margin-bottom: 40px;
+    position: relative;
+}
+
+/* ── Node ── */
+.timeline-node-slot {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+}
+
+.timeline-node {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--mud-palette-primary);
+    border: 3px solid var(--mud-palette-background);
+    box-shadow: 0 0 10px rgba(122, 158, 53, 0.4);
+    flex-shrink: 0;
+}
+
+/* ── Card slots ── */
+.timeline-slot {
+    padding: 0 20px;
+}
+
+/* ── Card ── */
+.timeline-card {
+    background: var(--mud-palette-surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.timeline-card:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Accent border faces the timeline — right edge for left cards, left edge for right cards */
+.timeline-entry--left .timeline-card {
+    border-right: 3px solid var(--mud-palette-primary);
+}
+
+.timeline-entry--right .timeline-card {
+    border-left: 3px solid var(--mud-palette-primary);
+}
+
+/* ── Card content ── */
+.timeline-date {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--mud-palette-primary);
+    opacity: 0.85;
+    margin-bottom: 8px;
+}
+
+.timeline-company {
+    margin: 0 0 10px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--mud-palette-text-primary);
+}
+
+.timeline-roles {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.timeline-role {
+    font-size: 0.85rem;
+    color: var(--mud-palette-text-secondary);
+}
+
+/*
+ * Progression indicator — a vertical line on the left encompassing both roles,
+ * with a small downward arrow at the base. No highlighting; both roles share
+ * the same muted style. The bracket reads as "these happened in sequence here"
+ * without implying either role belonged to a different company.
+ */
+.timeline-roles--progression {
+    position: relative;
+    padding-left: 14px;
+    border-left: 1.5px solid rgba(160, 152, 144, 0.3);
+}
+
+/* Downward arrow sitting at the foot of the bracket line */
+.timeline-roles--progression::after {
+    content: '▾';
+    position: absolute;
+    left: -5px;
+    bottom: -10px;
+    font-size: 0.85rem;
+    color: var(--mud-palette-text-secondary);
+    opacity: 0.4;
+    line-height: 1;
+}
+
+/* ── Responsive: collapse to left-anchored single column ── */
+@media (max-width: 640px) {
+    .timeline-entry {
+        grid-template-columns: 32px 1fr;
+        grid-template-rows: auto;
+    }
+
+    /* Node moves to column 1 on all entries */
+    .timeline-node-slot {
+        grid-column: 1;
+        grid-row: 1;
+        align-items: flex-start;
+        padding-top: 22px;
+    }
+
+    /* Left slot is hidden on mobile (cards reflow to right column) */
+    .timeline-slot--left {
+        display: none;
+    }
+
+    /* Right slot always fills column 2 on mobile, regardless of Side */
+    .timeline-slot--right {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    /* Show the card in the left slot for left-side entries on mobile */
+    .timeline-entry--left .timeline-slot--left {
+        display: block;
+        grid-column: 2;
+        grid-row: 1;
+        padding: 0 0 0 16px;
+    }
+
+    /* All cards get a left border on mobile */
+    .timeline-entry--left .timeline-card,
+    .timeline-entry--right .timeline-card {
+        border-left: 3px solid var(--mud-palette-primary);
+        border-right: none;
+    }
+
+    .timeline-slot--right {
+        padding: 0 0 0 16px;
+    }
+}

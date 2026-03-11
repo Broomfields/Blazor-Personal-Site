@@ -1,0 +1,62 @@
+<div class="timeline-entry timeline-entry--@Side">
+
+    @* Left slot: card if Side=="left", empty spacer otherwise *@
+    <div class="timeline-slot timeline-slot--left">
+        @if (Side == "left")
+        {
+            <div class="timeline-card">
+                <span class="timeline-date">@DateRange</span>
+                <p class="timeline-company">@Company</p>
+                <div class="timeline-roles @(!string.IsNullOrEmpty(PreviousRole) ? "timeline-roles--progression" : "")">
+                    @if (!string.IsNullOrEmpty(PreviousRole))
+                    {
+                        <span class="timeline-role">@PreviousRole</span>
+                        <span class="timeline-role">@Role</span>
+                    }
+                    else
+                    {
+                        <span class="timeline-role">@Role</span>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    @* Centre: node dot *@
+    <div class="timeline-node-slot">
+        <div class="timeline-node"></div>
+    </div>
+
+    @* Right slot: card if Side=="right", empty spacer otherwise *@
+    <div class="timeline-slot timeline-slot--right">
+        @if (Side == "right")
+        {
+            <div class="timeline-card">
+                <span class="timeline-date">@DateRange</span>
+                <p class="timeline-company">@Company</p>
+                <div class="timeline-roles @(!string.IsNullOrEmpty(PreviousRole) ? "timeline-roles--progression" : "")">
+                    @if (!string.IsNullOrEmpty(PreviousRole))
+                    {
+                        <span class="timeline-role">@PreviousRole</span>
+                        <span class="timeline-role">@Role</span>
+                    }
+                    else
+                    {
+                        <span class="timeline-role">@Role</span>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Company    { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string DateRange  { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Role       { get; set; } = string.Empty;
+    /// <summary>For promotions — the earlier role. Triggers progression display.</summary>
+    [Parameter] public string? PreviousRole { get; set; }
+    /// <summary>"left" or "right" — which side of the timeline the card sits on.</summary>
+    [Parameter] public string Side { get; set; } = "left";
+}

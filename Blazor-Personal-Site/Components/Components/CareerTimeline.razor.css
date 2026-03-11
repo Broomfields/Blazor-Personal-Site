@@ -1,0 +1,28 @@
+/* ──────────────────────────────────────────────
+   Career Timeline — container with centre vertical line
+   ────────────────────────────────────────────── */
+
+.career-timeline {
+    position: relative;
+    padding: 16px 0 32px;
+}
+
+/* Vertical centre line — fades in at top, fades out at bottom */
+.career-timeline::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    transform: translateX(-50%);
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        var(--mud-palette-primary) 6%,
+        var(--mud-palette-primary) 94%,
+        transparent
+    );
+    opacity: 0.3;
+    pointer-events: none;
+}

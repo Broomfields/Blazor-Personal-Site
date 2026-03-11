@@ -1,0 +1,13 @@
+/* ──────────────────────────────────────────────
+   Main Layout — drawer footer pinning
+   ────────────────────────────────────────────── */
+
+/*
+ * Makes the drawer contents a flex column so MudSpacer pushes
+ * AppFooter to the very bottom of the sidebar.
+ */
+.drawer-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}

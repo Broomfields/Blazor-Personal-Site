@@ -23,6 +23,17 @@
     --color-text-muted:     #A09890;
 }
 
+/* ── Overscroll Background ── */
+
+/*
+ * When the user bounces past the page edge (macOS rubber-band / iOS elastic
+ * scroll), the browser reveals its own background behind the page. Setting a
+ * dark colour on html prevents the default white flash in any scroll direction.
+ */
+html {
+    background-color: #1F1D1A !important;
+}
+
 /* ── Background — Grain & Depth Gradient ── */
 
 /*
