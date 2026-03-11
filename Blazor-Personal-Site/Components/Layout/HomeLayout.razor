@@ -1,0 +1,77 @@
+@inherits LayoutComponentBase
+
+<MudThemeProvider Theme="@_theme" IsDarkMode="true" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudText Typo="Typo.h5" Class="ml-3">Shaun Broomfield</MudText>
+        <MudSpacer />
+    </MudAppBar>
+    <MudMainContent Class="mt-16 pa-4">
+        @Body
+    </MudMainContent>
+</MudLayout>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+@code {
+    private MudTheme? _theme = null;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        _theme = new()
+        {
+            PaletteLight = _lightPalette,
+            PaletteDark = _darkPalette,
+            LayoutProperties = new LayoutProperties()
+        };
+    }
+
+    private readonly PaletteLight _lightPalette = new()
+    {
+        Primary = "#5E7A2A",
+        Black = "#2A2723",
+        AppbarText = "#2A2723",
+        AppbarBackground = "rgba(245,242,236,0.9)",
+        DrawerBackground = "#F5F2EC",
+        GrayLight = "#D4D0C8",
+        GrayLighter = "#F0EDE6",
+    };
+
+    private readonly PaletteDark _darkPalette = new()
+    {
+        Primary = "#7A9E35",
+        Surface = "#3D3A35",
+        Background = "#2A2723",
+        BackgroundGray = "#1F1D1A",
+        AppbarText = "#E8E4DC",
+        AppbarBackground = "rgba(42,39,35,0.85)",
+        DrawerBackground = "#1A1815",
+        ActionDefault = "#A09890",
+        ActionDisabled = "#A098904D",
+        ActionDisabledBackground = "#504C454D",
+        TextPrimary = "#E8E4DC",
+        TextSecondary = "#A09890",
+        TextDisabled = "#E8E4DC33",
+        DrawerIcon = "#A09890",
+        DrawerText = "#A09890",
+        GrayLight = "#504C45",
+        GrayLighter = "#3D3A35",
+        Info = "#8A9BA8",
+        Success = "#9CC240",
+        Warning = "#ffb545",
+        Error = "#ff3f5f",
+        LinesDefault = "#504C45",
+        TableLines = "#504C45",
+        Divider = "#3D3A35",
+        OverlayLight = "#2A272380",
+    };
+}
