@@ -1,0 +1,6 @@
+/*
+ * Home Layout scoped styles.
+ * The full-height flex rules for .mud-main-content live in site.css
+ * (scoped via .home-layout) because ::deep does not reliably pierce
+ * MudBlazor's rendered elements from a Blazor layout file.
+ */

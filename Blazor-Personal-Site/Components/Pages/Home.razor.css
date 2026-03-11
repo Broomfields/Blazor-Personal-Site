@@ -1,0 +1,14 @@
+/* ──────────────────────────────────────────────
+   Home Page — layout shell
+   ────────────────────────────────────────────── */
+
+/*
+ * Stretches to fill the flex column established by HomeLayout on
+ * MudMainContent, then passes that direction down to its children
+ * so CareerNav can claim the remaining height via flex: 1.
+ */
+.home-page-layout {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}

@@ -16,6 +16,10 @@
     align-items: center;
     position: relative;
 
+    /* Grow to fill whatever viewport height remains after Hero + FeatureNav.
+       This eliminates the grey gap that appears in portrait / tall viewports. */
+    flex: 1;
+
     /* Full-width bleed — side margins cancel px-4 on MudMainContent */
     margin-left: -16px;
     margin-right: -16px;
