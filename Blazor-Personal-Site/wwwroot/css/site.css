@@ -57,6 +57,71 @@ body::before {
     background-size: 300px 300px;
 }
 
+/* ── AppBar — Frosted Glass ── */
+
+/*
+ * The AppBar background is already semi-transparent (rgba 0.85), so
+ * backdrop-filter turns it into a genuine frosted-glass surface — content
+ * ghosts through it as you scroll rather than disappearing behind it.
+ */
+.mud-appbar {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+/* ── Surfaces — Inset Top Highlight ── */
+
+/*
+ * A 1 px inset highlight at the top edge of every MudPaper surface creates a
+ * subtle "lit from above" rim that lifts flat dark panels off the background.
+ * Nearly invisible at a glance but adds a premium tactile quality.
+ */
+.mud-paper {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+/* ── Scrollbar ── */
+
+/*
+ * Replaces the default OS scrollbar with a thin, palette-matched one.
+ * Thumb uses Cinder at rest and brightens to Highland Green on hover.
+ * Firefox uses the shorthand scrollbar-color property.
+ */
+::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--color-ash-plain);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-cinder);
+    border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-highland-green);
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #504C45 #2A2723;
+}
+
+/* ── Text Selection ── */
+
+/*
+ * Replaces the default blue browser selection highlight with Highland Green
+ * at 35% opacity — visible enough to be functional, on-palette enough to
+ * feel intentional.
+ */
+::selection {
+    background: rgba(122, 158, 53, 0.35);
+    color: var(--color-text-primary);
+}
+
 /* ── Hero ── */
 .hero-section {
     padding-top: 48px;
@@ -67,6 +132,10 @@ body::before {
     width: 200px !important;
     height: 200px !important;
     border: 3px solid var(--mud-palette-primary);
+    /* Thin dark gap ring, then a soft Highland Green halo */
+    box-shadow:
+        0 0 0 4px var(--color-ash-plain),
+        0 0 22px rgba(122, 158, 53, 0.3);
 }
 
 .hero-name {
