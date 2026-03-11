@@ -133,6 +133,43 @@ body::before {
     color: var(--color-text-primary);
 }
 
+/* ── Home Layout — viewport-fill flex for CareerNav stretch ── */
+
+/*
+ * MudMainContent is a <main> element. Blazor CSS isolation's ::deep combinator
+ * doesn't reliably pierce into MudBlazor's rendered elements, so these rules
+ * live in site.css, scoped via the .home-layout class placed on <MudLayout>.
+ *
+ * The flex column + min-height establishes the chain that lets CareerNav
+ * (flex: 1 in its own scoped CSS) absorb all remaining viewport height,
+ * eliminating the gap that shows in portrait / tall-viewport views.
+ *
+ * 64px = AppBar height; matches mt-16 (4rem) on MudMainContent.
+ */
+.home-layout .mud-main-content {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 64px);
+    box-sizing: border-box;
+}
+
+/* ── Main Layout (sub-pages) — viewport-fill to kill hard bottom edge ── */
+
+/*
+ * Without min-height, MudMainContent only grows to fit its content. In
+ * portrait / short-content views the body background bleeds below it,
+ * creating a hard colour boundary. Filling the viewport makes that gap
+ * disappear — the content area covers the full screen.
+ *
+ * position: relative makes MudMainContent the containing block for the
+ * absolutely-positioned .page-fade-tail gradient pinned to its bottom.
+ */
+.main-layout .mud-main-content {
+    min-height: calc(100vh - 64px);
+    box-sizing: border-box;
+    position: relative;
+}
+
 /* ── Hero ── */
 .hero-section {
     padding-top: 48px;

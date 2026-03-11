@@ -1,25 +1,59 @@
+@{
+    /*
+     * Declare render fragments at the TOP so C# sees them before any markup
+     * that invokes them (CS0841 — cannot use local variable before it is declared).
+     *
+     * cardInner  : two-column flex layout — text column + logo column
+     * cardContent: wraps cardInner in an <a> when Url is provided, else a plain div
+     *
+     * Logo mirroring is handled entirely in CSS:
+     *   Left-side cards  (.timeline-entry--left)  → text | logo  (logo faces inward)
+     *   Right-side cards (.timeline-entry--right) → logo | text  (logo faces inward)
+     * Using CSS order rather than separate markup keeps the fragment reusable.
+     */
+    RenderFragment cardInner = @<text>
+        <div class="card-text">
+            <span class="timeline-date">@DateRange</span>
+            <p class="timeline-company">@Company</p>
+            <div class="timeline-roles @(!string.IsNullOrEmpty(PreviousRole) ? "timeline-roles--progression" : "")">
+                @if (!string.IsNullOrEmpty(PreviousRole))
+                {
+                    <span class="timeline-role">@PreviousRole</span>
+                    <span class="timeline-role">@Role</span>
+                }
+                else
+                {
+                    <span class="timeline-role">@Role</span>
+                }
+            </div>
+        </div>
+        @if (!string.IsNullOrEmpty(LogoSrc))
+        {
+            <div class="card-logo">
+                <img src="@LogoSrc" alt="@Company logo" class="timeline-logo" />
+            </div>
+        }
+    </text>;
+
+    RenderFragment cardContent = @<text>
+        @if (!string.IsNullOrEmpty(Url))
+        {
+            <a class="timeline-card-link" href="@Url" target="_blank" rel="noopener noreferrer">
+                <div class="timeline-card">@cardInner</div>
+            </a>
+        }
+        else
+        {
+            <div class="timeline-card">@cardInner</div>
+        }
+    </text>;
+}
+
 <div class="timeline-entry timeline-entry--@Side">
 
     @* Left slot: card if Side=="left", empty spacer otherwise *@
     <div class="timeline-slot timeline-slot--left">
-        @if (Side == "left")
-        {
-            <div class="timeline-card">
-                <span class="timeline-date">@DateRange</span>
-                <p class="timeline-company">@Company</p>
-                <div class="timeline-roles @(!string.IsNullOrEmpty(PreviousRole) ? "timeline-roles--progression" : "")">
-                    @if (!string.IsNullOrEmpty(PreviousRole))
-                    {
-                        <span class="timeline-role">@PreviousRole</span>
-                        <span class="timeline-role">@Role</span>
-                    }
-                    else
-                    {
-                        <span class="timeline-role">@Role</span>
-                    }
-                </div>
-            </div>
-        }
+        @if (Side == "left") { @cardContent }
     </div>
 
     @* Centre: node dot *@
@@ -29,24 +63,7 @@
 
     @* Right slot: card if Side=="right", empty spacer otherwise *@
     <div class="timeline-slot timeline-slot--right">
-        @if (Side == "right")
-        {
-            <div class="timeline-card">
-                <span class="timeline-date">@DateRange</span>
-                <p class="timeline-company">@Company</p>
-                <div class="timeline-roles @(!string.IsNullOrEmpty(PreviousRole) ? "timeline-roles--progression" : "")">
-                    @if (!string.IsNullOrEmpty(PreviousRole))
-                    {
-                        <span class="timeline-role">@PreviousRole</span>
-                        <span class="timeline-role">@Role</span>
-                    }
-                    else
-                    {
-                        <span class="timeline-role">@Role</span>
-                    }
-                </div>
-            </div>
-        }
+        @if (Side == "right") { @cardContent }
     </div>
 
 </div>
@@ -59,4 +76,8 @@
     [Parameter] public string? PreviousRole { get; set; }
     /// <summary>"left" or "right" — which side of the timeline the card sits on.</summary>
     [Parameter] public string Side { get; set; } = "left";
+    /// <summary>Path to a logo image (relative to wwwroot), e.g. "images/logos/labman.svg".</summary>
+    [Parameter] public string? LogoSrc { get; set; }
+    /// <summary>Company website URL. When provided the entire card becomes a link.</summary>
+    [Parameter] public string? Url { get; set; }
 }
