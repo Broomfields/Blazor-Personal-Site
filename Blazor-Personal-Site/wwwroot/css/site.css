@@ -23,6 +23,40 @@
     --color-text-muted:     #A09890;
 }
 
+/* ── Background — Grain & Depth Gradient ── */
+
+/*
+ * Subtle radial gradient gives the flat Ash Plain background a slight sense
+ * of depth — marginally lighter at the upper-centre, fading to the deeper
+ * BackgroundGray at the edges.  The !important is needed to override
+ * MudBlazor's own background-color rule on body.
+ */
+body {
+    background: radial-gradient(
+        ellipse at 50% 25%,
+        #322E29 0%,
+        #2A2723 50%,
+        #1F1D1A 100%
+    ) fixed !important;
+}
+
+/*
+ * Grain overlay — a fixed, tiling SVG feTurbulence fractalNoise pattern
+ * rendered at very low opacity so it reads as subtle film-grain rather than
+ * noise.  pointer-events: none means it never blocks any interaction.
+ */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.045;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='g' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.68' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23g)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 300px 300px;
+}
+
 /* ── Hero ── */
 .hero-section {
     padding-top: 48px;
