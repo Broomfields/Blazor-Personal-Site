@@ -1,14 +1,427 @@
 @page "/builds"
+@page "/builds/{Slug}"
 
-<PageTitle>Builds — Shaun Broomfield</PageTitle>
+@using Blazor_Personal_Site.Models
+@using Blazor_Personal_Site.Services
+@inject CadBuildsService BuildsService
+@inject NavigationManager Nav
 
-<MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
-    <MudText Typo="Typo.h3" Class="mb-2">Builds</MudText>
-    <MudText Typo="Typo.body1" Style="opacity: 0.75;" Class="mb-8">
-        3D-printed projects from practical desk organisers to structural engineering parts.
-    </MudText>
+<PageTitle>@ComputedPageTitle</PageTitle>
 
-    <MudAlert Severity="Severity.Info" Class="mb-6">
-        Projects coming soon. More to be added here shortly.
-    </MudAlert>
-</MudContainer>
+@if (Slug is null)
+{
+    <!-- ═══════════ LIST VIEW ═══════════ -->
+    <MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
+
+        <MudText Typo="Typo.h3" Class="mb-2">Builds</MudText>
+        <MudText Typo="Typo.body1" Style="opacity: 0.75;" Class="mb-8">
+            3D-printed projects from practical desk organisers to structural engineering parts.
+        </MudText>
+
+        @if (_loadingManifest)
+        {
+            <div class="builds-loading">
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+            </div>
+        }
+        else if (_manifestError)
+        {
+            <div class="builds-error">
+                <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
+                    Hey, sorry — we couldn't fetch the builds right now. Please check back in a moment.
+                </MudAlert>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Refresh"
+                           OnClick="RetryManifestAsync">
+                    Retry
+                </MudButton>
+            </div>
+        }
+        else if (_manifest is null || _manifest.Builds.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+                No builds found. Check back soon!
+            </MudAlert>
+        }
+        else
+        {
+            <!-- ── Tag filter (multi-select autocomplete) ── -->
+            @if (AllTags.Count > 0)
+            {
+                <div class="builds-tag-filter">
+
+                    <!-- Search input + suggestions dropdown -->
+                    <div class="builds-tag-search-wrapper">
+                        <input class="builds-tag-search"
+                               type="text"
+                               placeholder="Filter by tag…"
+                               value="@_tagQuery"
+                               @oninput="@(e => _tagQuery = e.Value?.ToString() ?? string.Empty)"
+                               @onfocus="@(() => _showTagSuggestions = true)"
+                               @onblur="@(() => { if (!_mouseOverSuggestions) _showTagSuggestions = false; })"
+                               autocomplete="off"
+                               aria-label="Filter builds by tag" />
+                        @if (_showTagSuggestions && TagSuggestions.Count > 0)
+                        {
+                            <ul class="builds-tag-suggestions" role="listbox"
+                                @onmouseenter="@(() => _mouseOverSuggestions = true)"
+                                @onmouseleave="@(() => _mouseOverSuggestions = false)">
+                                @foreach (var suggestion in TagSuggestions)
+                                {
+                                    var s = suggestion;
+                                    <li class="builds-tag-suggestion"
+                                        role="option"
+                                        @onmousedown:preventDefault="true"
+                                        @onclick="@(() => AddTag(s))">@s</li>
+                                }
+                            </ul>
+                        }
+                    </div>
+
+                    <!-- Result count when a filter is active -->
+                    @if (_selectedTags.Count > 0)
+                    {
+                        <p class="builds-filter-count">@FilteredBuilds.Count of @_manifest.Builds.Count builds</p>
+                    }
+
+                    <!-- Active tag chips -->
+                    @if (_selectedTags.Count > 0)
+                    {
+                        <div class="builds-active-tags">
+                            @foreach (var tag in _selectedTags.ToList())
+                            {
+                                var t = tag;
+                                <span class="builds-active-tag">
+                                    @t
+                                    <button class="builds-active-tag-remove"
+                                            @onclick="@(() => RemoveTag(t))"
+                                            aria-label="@($"Remove {t} filter")">&#x2715;</button>
+                                </span>
+                            }
+                            <button class="builds-filter-clear" @onclick="ClearTags">Clear all</button>
+                        </div>
+                    }
+
+                </div>
+            }
+
+            <!-- ── Build grid ── -->
+            @if (FilteredBuilds.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+                    No builds match that tag.
+                </MudAlert>
+            }
+            else
+            {
+                <MudGrid Spacing="4">
+                    @foreach (var build in FilteredBuilds)
+                    {
+                        <MudItem xs="12" sm="6" md="4">
+                            <BuildCard Build="build"
+                                       CoverUrl="@BuildsService.ResolveCdnUrl(build.Slug, build.Cover)"
+                                       OnClick="@(() => Nav.NavigateTo($"/builds/{build.Slug}"))" />
+                        </MudItem>
+                    }
+                </MudGrid>
+            }
+        }
+
+    </MudContainer>
+}
+else
+{
+    <!-- ═══════════ DETAIL VIEW ═══════════ -->
+    <MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">
+
+        <MudButton Variant="Variant.Text"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.ArrowBack"
+                   OnClick="@(() => Nav.NavigateTo("/builds"))"
+                   Class="mb-6 back-btn">
+            All Builds
+        </MudButton>
+
+        @if (_loadingBuild)
+        {
+            <div class="builds-loading">
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+            </div>
+        }
+        else if (_buildError)
+        {
+            <div class="builds-error">
+                <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
+                    Hey, sorry — we couldn't load this build right now. Please try again in a moment.
+                </MudAlert>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Refresh"
+                           OnClick="RetryBuildAsync">
+                    Retry
+                </MudButton>
+            </div>
+        }
+        else
+        {
+            <!-- Build header (uses manifest data so it renders even before the markdown arrives) -->
+            @if (_currentBuild is not null)
+            {
+                <div class="build-detail-header">
+
+                    @if (!string.IsNullOrEmpty(_currentBuild.Cover))
+                    {
+                        <div class="build-detail-cover">
+                            <img src="@BuildsService.ResolveCdnUrl(_currentBuild.Slug, _currentBuild.Cover)"
+                                 alt="@_currentBuild.Title"
+                                 loading="eager" />
+                        </div>
+                    }
+
+                    <h1 class="build-detail-title">@_currentBuild.Title</h1>
+
+                    <div class="build-detail-meta">
+                        @if (!string.IsNullOrEmpty(_currentBuild.Date))
+                        {
+                            <span class="build-detail-meta-item">
+                                <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" />
+                                @FormatDate(_currentBuild.Date)
+                            </span>
+                        }
+                        @if (!string.IsNullOrEmpty(_currentBuild.CadTool))
+                        {
+                            <span class="build-detail-meta-item">
+                                <MudIcon Icon="@Icons.Material.Filled.DesignServices" Size="Size.Small" />
+                                @_currentBuild.CadTool
+                            </span>
+                        }
+                        @if (!string.IsNullOrEmpty(_currentBuild.Status))
+                        {
+                            <span class="build-detail-status @GetStatusCssClass(_currentBuild.Status)">
+                                @GetStatusLabel(_currentBuild.Status)
+                            </span>
+                        }
+                    </div>
+
+                    @if (_currentBuild.Tags.Count > 0)
+                    {
+                        <div class="build-detail-tags">
+                            @foreach (var tag in _currentBuild.Tags)
+                            {
+                                <span class="build-detail-tag">@tag</span>
+                            }
+                        </div>
+                    }
+
+                </div>
+            }
+
+            <!-- Markdown body.
+                 .build-content-scope is a scope-anchor: it gives the ::deep
+                 CSS selector an [b-xxxx]-attributed ancestor above
+                 .build-content so that scoped rules like
+                 ::deep .build-content img actually match. -->
+            @if (_buildHtml is not null)
+            {
+                <div class="build-content-scope">
+                    <div class="build-content">
+                        @((MarkupString)_buildHtml)
+                    </div>
+                </div>
+            }
+        }
+
+    </MudContainer>
+}
+
+@code {
+    [Parameter] public string? Slug { get; set; }
+
+    private BuildManifest? _manifest;
+    private bool _loadingManifest = true;
+    private bool _manifestError   = false;
+
+    private string? _buildHtml;
+    private bool _loadingBuild = false;
+    private bool _buildError   = false;
+
+    // Tracks what slug we've already loaded to avoid redundant fetches
+    private string? _loadedSlug = "##NOT_INITIALIZED##";
+
+    // ── Tag filter state ──────────────────────────────────────────────────────
+    // Multi-select: zero or more active tags, OR-combined.
+    private readonly HashSet<string> _selectedTags = new(StringComparer.OrdinalIgnoreCase);
+    private string _tagQuery             = string.Empty;
+    private bool   _showTagSuggestions   = false;
+    // Prevents @onblur from hiding the suggestions while the mouse is over
+    // the list — necessary because Blazor Server's SignalR round-trip makes
+    // @onmousedown:preventDefault arrive too late to stop the browser's
+    // native focus-shift, so blur fires before the click registers.
+    private bool   _mouseOverSuggestions = false;
+
+    private BuildEntry? _currentBuild =>
+        Slug is not null ? _manifest?.Builds.FirstOrDefault(b => b.Slug == Slug) : null;
+
+    private string ComputedPageTitle =>
+        _currentBuild is not null
+            ? $"{_currentBuild.Title} — Builds — Shaun Broomfield"
+            : "Builds — Shaun Broomfield";
+
+    // All distinct tags across every build, sorted alphabetically
+    private List<string> AllTags =>
+        _manifest?.Builds
+            .SelectMany(b => b.Tags)
+            .Distinct()
+            .OrderBy(t => t)
+            .ToList()
+        ?? new List<string>();
+
+    // Tags shown in the autocomplete dropdown:
+    // not already selected, matching the current search query (if any)
+    private List<string> TagSuggestions =>
+        AllTags
+            .Where(t => !_selectedTags.Contains(t)
+                     && (string.IsNullOrWhiteSpace(_tagQuery)
+                         || t.Contains(_tagQuery, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+
+    // Builds visible in the grid — AND logic across all selected tags
+    private List<BuildEntry> FilteredBuilds
+    {
+        get
+        {
+            if (_manifest is null) return new List<BuildEntry>();
+            if (_selectedTags.Count == 0) return _manifest.Builds;
+            
+            // "All" ensures the build contains every single tag in your _selectedTags list
+            return _manifest.Builds
+                .Where(b => _selectedTags.All(t => b.Tags.Contains(t)))
+                .ToList();
+        }
+    }
+
+    // ── Lifecycle ────────────────────────────────────────────────────────────
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadManifestAsync();
+        _loadedSlug = Slug;
+
+        if (Slug is not null)
+            await LoadBuildAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Skip on the very first render — handled by OnInitializedAsync above.
+        if (_loadedSlug == "##NOT_INITIALIZED##") return;
+
+        if (Slug == _loadedSlug) return;
+
+        _loadedSlug = Slug;
+
+        if (Slug is not null)
+        {
+            await LoadBuildAsync();
+        }
+        else
+        {
+            // Navigated back to the list — clear build state
+            _buildHtml  = null;
+            _buildError = false;
+        }
+    }
+
+    // ── Data loading ─────────────────────────────────────────────────────────
+
+    private async Task LoadManifestAsync()
+    {
+        _loadingManifest = true;
+        _manifestError   = false;
+
+        var result = await BuildsService.FetchManifestAsync();
+
+        _loadingManifest = false;
+
+        if (result is null)
+            _manifestError = true;
+        else
+            _manifest = result;
+    }
+
+    private async Task LoadBuildAsync()
+    {
+        _loadingBuild = true;
+        _buildError   = false;
+        _buildHtml    = null;
+
+        var html = await BuildsService.FetchBuildHtmlAsync(Slug!);
+
+        _loadingBuild = false;
+
+        if (html is null)
+            _buildError = true;
+        else
+            _buildHtml = html;
+    }
+
+    // ── Retry handlers ───────────────────────────────────────────────────────
+
+    private async Task RetryManifestAsync()
+    {
+        await LoadManifestAsync();
+    }
+
+    private async Task RetryBuildAsync()
+    {
+        if (Slug is not null) await LoadBuildAsync();
+    }
+
+    // ── Tag filter actions ────────────────────────────────────────────────────
+
+    private void AddTag(string tag)
+    {
+        _selectedTags.Add(tag);
+        _tagQuery             = string.Empty;
+        _showTagSuggestions   = false;
+        _mouseOverSuggestions = false;
+    }
+
+    private void RemoveTag(string tag) => _selectedTags.Remove(tag);
+
+    private void ClearTags()
+    {
+        _selectedTags.Clear();
+        _tagQuery = string.Empty;
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private static string FormatDate(string isoDate)
+    {
+        if (DateTime.TryParse(isoDate, out var dt))
+            return dt.ToString("d MMMM yyyy");
+        return isoDate;
+    }
+
+    private static string GetStatusCssClass(string status) =>
+        status.ToLowerInvariant() switch
+        {
+            "complete"    => "build-detail-status--complete",
+            "in-progress" => "build-detail-status--in-progress",
+            "wip"         => "build-detail-status--in-progress",
+            "abandoned"   => "build-detail-status--abandoned",
+            _             => "build-detail-status--default"
+        };
+
+    private static string GetStatusLabel(string status) =>
+        status.ToLowerInvariant() switch
+        {
+            "complete"    => "Complete",
+            "in-progress" => "In Progress",
+            "wip"         => "WIP",
+            "abandoned"   => "Abandoned",
+            _             => status
+        };
+}
