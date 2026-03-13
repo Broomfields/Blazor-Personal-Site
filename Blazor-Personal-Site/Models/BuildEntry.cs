@@ -27,4 +27,12 @@ public class BuildEntry
 
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Bare filename stems of sub-pages for this build.
+    /// Absent (null) when the build has no sub-pages.
+    /// Never an empty list — the manifest simply omits the field.
+    /// </summary>
+    [JsonPropertyName("subpages")]
+    public List<string>? Subpages { get; set; }
 }

@@ -1,5 +1,6 @@
 @page "/builds"
 @page "/builds/{Slug}"
+@page "/builds/{Slug}/{Subpage}"
 
 @using Blazor_Personal_Site.Models
 @using Blazor_Personal_Site.Services
@@ -130,6 +131,66 @@
 
     </MudContainer>
 }
+else if (Subpage is not null)
+{
+    <!-- ═══════════ SUB-PAGE VIEW ═══════════ -->
+    <MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">
+
+        <MudButton Variant="Variant.Text"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.ArrowBack"
+                   OnClick="@(() => Nav.NavigateTo($"/builds/{Slug}"))"
+                   Class="mb-6 back-btn">
+            @(_currentBuild?.Title ?? "Build")
+        </MudButton>
+
+        @if (_loadingSubpage)
+        {
+            <div class="builds-loading">
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+            </div>
+        }
+        else if (_subpageError)
+        {
+            <div class="builds-error">
+                <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
+                    Hey, sorry — we couldn't load this page right now. Please try again in a moment.
+                </MudAlert>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Refresh"
+                           OnClick="RetrySubPageAsync">
+                    Retry
+                </MudButton>
+            </div>
+        }
+        else
+        {
+            <!-- Sub-page header -->
+            <div class="build-detail-header">
+                <h1 class="build-detail-title">@(_subpageTitle ?? TitleCaseFromSlug(Subpage))</h1>
+                @if (_currentBuild is not null)
+                {
+                    <div class="build-subpage-parent-label">
+                        <MudIcon Icon="@Icons.Material.Filled.Build" Size="Size.Small" />
+                        <span>@_currentBuild.Title</span>
+                    </div>
+                }
+            </div>
+
+            <!-- Markdown body -->
+            @if (_subpageHtml is not null)
+            {
+                <div class="build-content-scope">
+                    <div class="build-content">
+                        @((MarkupString)_subpageHtml)
+                    </div>
+                </div>
+            }
+        }
+
+    </MudContainer>
+}
 else
 {
     <!-- ═══════════ DETAIL VIEW ═══════════ -->
@@ -215,6 +276,30 @@ else
                     }
 
                 </div>
+
+                <!-- ── Sub-page navigation (only when sub-pages exist) ── -->
+                @if (_currentBuild.Subpages is { Count: > 0 })
+                {
+                    <div class="build-subpages-nav">
+                        <p class="build-subpages-nav-label">Pages</p>
+                        <div class="build-subpages-list">
+                            @foreach (var sp in _currentBuild.Subpages)
+                            {
+                                var spSlug = sp;
+                                <a class="build-subpage-card"
+                                   href="/builds/@_currentBuild.Slug/@spSlug">
+                                    <MudIcon Icon="@Icons.Material.Filled.Article"
+                                             Size="Size.Small"
+                                             Class="build-subpage-card-icon" />
+                                    <span>@GetSubPageDisplayTitle(spSlug)</span>
+                                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight"
+                                             Size="Size.Small"
+                                             Class="build-subpage-card-arrow" />
+                                </a>
+                            }
+                        </div>
+                    </div>
+                }
             }
 
             <!-- Markdown body.
@@ -237,6 +322,7 @@ else
 
 @code {
     [Parameter] public string? Slug { get; set; }
+    [Parameter] public string? Subpage { get; set; }
 
     private BuildManifest? _manifest;
     private bool _loadingManifest = true;
@@ -246,8 +332,19 @@ else
     private bool _loadingBuild = false;
     private bool _buildError   = false;
 
-    // Tracks what slug we've already loaded to avoid redundant fetches
-    private string? _loadedSlug = "##NOT_INITIALIZED##";
+    private string? _subpageHtml;
+    private string? _subpageTitle;
+    private bool _loadingSubpage = false;
+    private bool _subpageError   = false;
+
+    // Tracks the combined (Slug, Subpage) key we've already loaded to avoid
+    // redundant fetches on parameter-change cycles.
+    private string _loadedKey = "##NOT_INITIALIZED##";
+    private string CurrentKey => $"{Slug}|{Subpage}";
+
+    // Cached sub-page display titles (stem → title) so the nav cards
+    // can show proper names once the titles are fetched in the background.
+    private readonly Dictionary<string, string> _subpageTitleCache = new();
 
     // ── Tag filter state ──────────────────────────────────────────────────────
     // Multi-select: zero or more active tags, OR-combined.
@@ -263,10 +360,23 @@ else
     private BuildEntry? _currentBuild =>
         Slug is not null ? _manifest?.Builds.FirstOrDefault(b => b.Slug == Slug) : null;
 
-    private string ComputedPageTitle =>
-        _currentBuild is not null
-            ? $"{_currentBuild.Title} — Builds — Shaun Broomfield"
-            : "Builds — Shaun Broomfield";
+    private string ComputedPageTitle
+    {
+        get
+        {
+            if (Subpage is not null)
+            {
+                var spTitle = _subpageTitle ?? TitleCaseFromSlug(Subpage);
+                var buildTitle = _currentBuild?.Title;
+                return buildTitle is not null
+                    ? $"{spTitle} — {buildTitle} — Builds — Shaun Broomfield"
+                    : $"{spTitle} — Builds — Shaun Broomfield";
+            }
+            return _currentBuild is not null
+                ? $"{_currentBuild.Title} — Builds — Shaun Broomfield"
+                : "Builds — Shaun Broomfield";
+        }
+    }
 
     // All distinct tags across every build, sorted alphabetically
     private List<string> AllTags =>
@@ -293,7 +403,7 @@ else
         {
             if (_manifest is null) return new List<BuildEntry>();
             if (_selectedTags.Count == 0) return _manifest.Builds;
-            
+
             // "All" ensures the build contains every single tag in your _selectedTags list
             return _manifest.Builds
                 .Where(b => _selectedTags.All(t => b.Tags.Contains(t)))
@@ -306,30 +416,46 @@ else
     protected override async Task OnInitializedAsync()
     {
         await LoadManifestAsync();
-        _loadedSlug = Slug;
+        _loadedKey = CurrentKey;
 
         if (Slug is not null)
-            await LoadBuildAsync();
+        {
+            if (Subpage is not null)
+                await LoadSubPageAsync();
+            else
+                await LoadBuildAsync();
+        }
     }
 
     protected override async Task OnParametersSetAsync()
     {
         // Skip on the very first render — handled by OnInitializedAsync above.
-        if (_loadedSlug == "##NOT_INITIALIZED##") return;
+        if (_loadedKey == "##NOT_INITIALIZED##") return;
 
-        if (Slug == _loadedSlug) return;
+        if (CurrentKey == _loadedKey) return;
 
-        _loadedSlug = Slug;
+        _loadedKey = CurrentKey;
 
-        if (Slug is not null)
+        if (Slug is null)
         {
-            await LoadBuildAsync();
+            // Navigated back to the list — clear build/subpage state
+            _buildHtml    = null;
+            _buildError   = false;
+            _subpageHtml  = null;
+            _subpageTitle = null;
+            _subpageError = false;
+        }
+        else if (Subpage is not null)
+        {
+            await LoadSubPageAsync();
         }
         else
         {
-            // Navigated back to the list — clear build state
-            _buildHtml  = null;
-            _buildError = false;
+            // Navigated to a build detail — clear any lingering sub-page state
+            _subpageHtml  = null;
+            _subpageTitle = null;
+            _subpageError = false;
+            await LoadBuildAsync();
         }
     }
 
@@ -347,7 +473,34 @@ else
         if (result is null)
             _manifestError = true;
         else
+        {
             _manifest = result;
+            // Eagerly warm sub-page titles in the background so nav cards
+            // can show proper names without a visible delay.
+            _ = WarmSubPageTitlesAsync();
+        }
+    }
+
+    private async Task WarmSubPageTitlesAsync()
+    {
+        if (_manifest is null) return;
+
+        var tasks = _manifest.Builds
+            .Where(b => b.Subpages is { Count: > 0 })
+            .SelectMany(b => b.Subpages!.Select(sp => WarmSubPageTitleAsync(b.Slug, sp)))
+            .ToList();
+
+        await Task.WhenAll(tasks);
+    }
+
+    private async Task WarmSubPageTitleAsync(string slug, string subpage)
+    {
+        var title = await BuildsService.FetchSubPageTitleAsync(slug, subpage);
+        if (title is not null)
+        {
+            _subpageTitleCache[subpage] = title;
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private async Task LoadBuildAsync()
@@ -366,6 +519,32 @@ else
             _buildHtml = html;
     }
 
+    private async Task LoadSubPageAsync()
+    {
+        _loadingSubpage = true;
+        _subpageError   = false;
+        _subpageHtml    = null;
+        _subpageTitle   = null;
+
+        var htmlTask  = BuildsService.FetchSubPageHtmlAsync(Slug!, Subpage!);
+        var titleTask = BuildsService.FetchSubPageTitleAsync(Slug!, Subpage!);
+
+        await Task.WhenAll(htmlTask, titleTask);
+
+        var html  = htmlTask.Result;
+        var title = titleTask.Result;
+
+        _loadingSubpage = false;
+
+        if (html is null)
+            _subpageError = true;
+        else
+        {
+            _subpageHtml  = html;
+            _subpageTitle = title;
+        }
+    }
+
     // ── Retry handlers ───────────────────────────────────────────────────────
 
     private async Task RetryManifestAsync()
@@ -376,6 +555,11 @@ else
     private async Task RetryBuildAsync()
     {
         if (Slug is not null) await LoadBuildAsync();
+    }
+
+    private async Task RetrySubPageAsync()
+    {
+        if (Slug is not null && Subpage is not null) await LoadSubPageAsync();
     }
 
     // ── Tag filter actions ────────────────────────────────────────────────────
@@ -397,6 +581,19 @@ else
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns a display title for a sub-page stem. Uses the cached title from
+    /// frontmatter if already fetched; otherwise formats the slug as a fallback.
+    /// </summary>
+    private string GetSubPageDisplayTitle(string subpage) =>
+        _subpageTitleCache.TryGetValue(subpage, out var title)
+            ? title
+            : TitleCaseFromSlug(subpage);
+
+    private static string TitleCaseFromSlug(string slug) =>
+        string.Join(" ", slug.Split('-')
+            .Select(w => w.Length > 0 ? char.ToUpper(w[0]) + w[1..] : w));
 
     private static string FormatDate(string isoDate)
     {
