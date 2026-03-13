@@ -33,12 +33,15 @@ public class CadBuildsService
     private DateTime _manifestCachedAt = DateTime.MinValue;
     private static readonly TimeSpan ManifestTtl = TimeSpan.FromMinutes(5);
 
-    // Per-build markdown cache (slug → rendered HTML)
+    // Per-build / per-subpage markdown cache (slug or "slug/subpage" → rendered HTML)
     // Version token: bump this when the HTML post-processing pipeline changes
-    // (e.g. WrapImages added) so stale cached HTML is never served.
-    private const int HtmlCacheVersion = 2;
+    // (e.g. WrapImages, RewriteRelativeLinks added) so stale cached HTML is never served.
+    private const int HtmlCacheVersion = 3;
     private readonly Dictionary<string, (string Html, DateTime CachedAt, int Version)> _htmlCache = new();
     private static readonly TimeSpan HtmlTtl = TimeSpan.FromMinutes(10);
+
+    // Sub-page title cache ("slug/subpage" → title string extracted from frontmatter)
+    private readonly Dictionary<string, (string Title, DateTime CachedAt)> _subpageTitleCache = new();
 
     public CadBuildsService(IHttpClientFactory httpClientFactory, ILogger<CadBuildsService> logger)
     {
@@ -124,6 +127,7 @@ public class CadBuildsService
             body = RewriteRelativeImages(body, slug);
             var html = Markdown.ToHtml(body, MarkdownPipeline);
             html = WrapImages(html);
+            html = RewriteRelativeLinks(html, slug);
 
             _htmlCache[slug] = (html, DateTime.UtcNow, HtmlCacheVersion);
             return html;
@@ -131,6 +135,74 @@ public class CadBuildsService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to fetch build markdown for slug '{Slug}'.", slug);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Fetches, processes, and caches the rendered HTML for a single sub-page.
+    /// Applies the same pipeline as the main build page (front matter stripped,
+    /// relative images rewritten, markdown converted, images wrapped).
+    /// Returns null if the fetch fails.
+    /// </summary>
+    public async Task<string?> FetchSubPageHtmlAsync(string slug, string subpage)
+    {
+        var cacheKey = $"{slug}/{subpage}";
+
+        if (_htmlCache.TryGetValue(cacheKey, out var cached) &&
+            cached.Version == HtmlCacheVersion &&
+            DateTime.UtcNow - cached.CachedAt < HtmlTtl)
+            return cached.Html;
+
+        var url = $"{RawBase}/builds/{Uri.EscapeDataString(slug)}/{subpage}.md";
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var http = _httpClientFactory.CreateClient();
+            var raw = await http.GetStringAsync(url, cts.Token);
+
+            var body = StripFrontMatter(raw);
+            body = RewriteRelativeImages(body, slug);
+            var html = Markdown.ToHtml(body, MarkdownPipeline);
+            html = WrapImages(html);
+
+            _htmlCache[cacheKey] = (html, DateTime.UtcNow, HtmlCacheVersion);
+            return html;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to fetch sub-page markdown for '{Slug}/{Subpage}'.", slug, subpage);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Fetches and caches the <c>title</c> field from a sub-page's YAML front matter.
+    /// Used to populate navigation labels without processing the full markdown body.
+    /// Returns null if the fetch fails or no title is found in the front matter.
+    /// </summary>
+    public async Task<string?> FetchSubPageTitleAsync(string slug, string subpage)
+    {
+        var cacheKey = $"{slug}/{subpage}";
+
+        if (_subpageTitleCache.TryGetValue(cacheKey, out var cached) &&
+            DateTime.UtcNow - cached.CachedAt < HtmlTtl)
+            return cached.Title;
+
+        var url = $"{RawBase}/builds/{Uri.EscapeDataString(slug)}/{subpage}.md";
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var http = _httpClientFactory.CreateClient();
+            var raw = await http.GetStringAsync(url, cts.Token);
+
+            var title = ExtractFrontMatterTitle(raw) ?? TitleCaseFromSlug(subpage);
+            _subpageTitleCache[cacheKey] = (title, DateTime.UtcNow);
+            return title;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to fetch sub-page title for '{Slug}/{Subpage}'.", slug, subpage);
             return null;
         }
     }
@@ -202,4 +274,53 @@ public class CadBuildsService
                 return $"![{alt}]({cdnBase}/{path})";
             });
     }
+
+    /// <summary>
+    /// Rewrites bare relative <c>href</c> values in rendered HTML — those with
+    /// no protocol, no leading slash, and no fragment-only form — to absolute
+    /// Blazor routes (<c>/builds/{slug}/{stem}</c>).
+    /// This turns internal sub-page links like <c>[Print Settings](print-settings)</c>
+    /// into proper SPA navigation targets instead of broken relative URLs.
+    /// </summary>
+    private static string RewriteRelativeLinks(string html, string slug)
+    {
+        // Match href="value" where value does NOT start with:
+        //   https?://  (absolute HTTP/S)
+        //   //         (protocol-relative)
+        //   /          (root-relative – already correct)
+        //   #          (fragment-only anchor)
+        return Regex.Replace(
+            html,
+            @"href=""(?!https?://|//|[/#])([^""]+)""",
+            m => $"href=\"/builds/{Uri.EscapeDataString(slug)}/{m.Groups[1].Value}\"");
+    }
+
+    /// <summary>
+    /// Extracts the <c>title</c> field from a YAML front matter block.
+    /// Returns null if the document has no front matter or no title field.
+    /// </summary>
+    private static string? ExtractFrontMatterTitle(string markdown)
+    {
+        var trimmed = markdown.TrimStart();
+        if (!trimmed.StartsWith("---")) return null;
+
+        var firstNewline = trimmed.IndexOf('\n');
+        if (firstNewline < 0) return null;
+
+        var closingIndex = trimmed.IndexOf("\n---", firstNewline);
+        if (closingIndex < 0) return null;
+
+        var frontMatter = trimmed[..closingIndex];
+        var match = Regex.Match(frontMatter, @"^title:\s*""?([^""\r\n]+)""?\s*$", RegexOptions.Multiline);
+        return match.Success ? match.Groups[1].Value.Trim() : null;
+    }
+
+    /// <summary>
+    /// Converts a kebab-case slug (e.g. <c>print-settings</c>) to a
+    /// human-readable title-cased string (<c>Print Settings</c>).
+    /// Used as a fallback when no front matter title is available.
+    /// </summary>
+    private static string TitleCaseFromSlug(string slug) =>
+        string.Join(" ", slug.Split('-')
+            .Select(w => w.Length > 0 ? char.ToUpper(w[0]) + w[1..] : w));
 }

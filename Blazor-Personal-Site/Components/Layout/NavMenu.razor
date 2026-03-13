@@ -1,10 +1,170 @@
+@using Blazor_Personal_Site.Models
+@using Blazor_Personal_Site.Services
+@inject CadBuildsService BuildsService
+@inject NavigationManager Nav
+@implements IDisposable
 
 <MudNavMenu Class="pt-2">
+
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+
     <MudDivider Class="my-2" />
+
     <MudNavLink Href="programming" Icon="@Icons.Material.Filled.Code">Programming</MudNavLink>
-    <MudNavLink Href="builds" Icon="@Icons.Material.Filled.Build">Builds</MudNavLink>
+
+    @if (_manifest is not null)
+    {
+        <!-- Builds group — expands to show each build, and sub-pages nested within -->
+        <MudNavGroup Title="Builds"
+                     Icon="@Icons.Material.Filled.Build"
+                     Href="builds"
+                     @bind-Expanded="_buildsExpanded">
+            @foreach (var build in _manifest.Builds)
+            {
+                @if (build.Subpages is { Count: > 0 })
+                {
+                    <!-- Build with sub-pages: nested group -->
+                    <MudNavGroup Title="@build.Title"
+                                 Href="@($"builds/{build.Slug}")"
+                                 Expanded="@_buildGroupExpanded.GetValueOrDefault(build.Slug)"
+                                 ExpandedChanged="@((bool v) => _buildGroupExpanded[build.Slug] = v)">
+                        @foreach (var sp in build.Subpages)
+                        {
+                            var spSlug = sp;
+                            <MudNavLink Href="@($"builds/{build.Slug}/{spSlug}")">
+                                @GetSubPageTitle(build.Slug, spSlug)
+                            </MudNavLink>
+                        }
+                    </MudNavGroup>
+                }
+                else
+                {
+                    <!-- Build without sub-pages: simple link -->
+                    <MudNavLink Href="@($"builds/{build.Slug}")">@build.Title</MudNavLink>
+                }
+            }
+        </MudNavGroup>
+    }
+    else
+    {
+        <!-- Manifest not yet loaded: show flat Builds link -->
+        <MudNavLink Href="builds" Icon="@Icons.Material.Filled.Build">Builds</MudNavLink>
+    }
+
     <MudNavLink Href="writing" Icon="@Icons.Material.Filled.MenuBook">Writing</MudNavLink>
+
     <MudDivider Class="my-2" />
+
     <MudNavLink Href="career" Icon="@Icons.Material.Filled.Work">Career</MudNavLink>
+
 </MudNavMenu>
+
+@code {
+    private BuildManifest? _manifest;
+
+    // Whether the top-level Builds nav group is expanded
+    private bool _buildsExpanded;
+
+    // Per-build expansion state for builds that have sub-pages
+    private readonly Dictionary<string, bool> _buildGroupExpanded = new();
+
+    // Sub-page display titles keyed as "slug/subpage"
+    private readonly Dictionary<string, string> _subpageTitles = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Initialise expansion from the current URL
+        UpdateExpansionFromUrl(Nav.Uri);
+
+        Nav.LocationChanged += OnLocationChanged;
+
+        _manifest = await BuildsService.FetchManifestAsync();
+
+        if (_manifest is not null)
+        {
+            // Seed build-group expansion state so every build group starts collapsed
+            // (the URL-based update above will expand the right one if needed).
+            foreach (var build in _manifest.Builds.Where(b => b.Subpages is { Count: > 0 }))
+            {
+                if (!_buildGroupExpanded.ContainsKey(build.Slug))
+                    _buildGroupExpanded[build.Slug] = false;
+            }
+
+            // Re-apply URL expansion now that we know the build list
+            UpdateExpansionFromUrl(Nav.Uri);
+            StateHasChanged();
+
+            // Fetch sub-page titles in the background — nav cards update as each resolves
+            _ = LoadAllSubPageTitlesAsync();
+        }
+    }
+
+    private async Task LoadAllSubPageTitlesAsync()
+    {
+        if (_manifest is null) return;
+
+        var tasks = _manifest.Builds
+            .Where(b => b.Subpages is { Count: > 0 })
+            .SelectMany(b => b.Subpages!.Select(sp => LoadSubPageTitleAsync(b.Slug, sp)))
+            .ToList();
+
+        await Task.WhenAll(tasks);
+    }
+
+    private async Task LoadSubPageTitleAsync(string slug, string subpage)
+    {
+        var title = await BuildsService.FetchSubPageTitleAsync(slug, subpage);
+        if (title is not null)
+        {
+            _subpageTitles[$"{slug}/{subpage}"] = title;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        UpdateExpansionFromUrl(e.Location);
+        InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>
+    /// Expands the Builds group (and the appropriate build sub-group) when the
+    /// current URL is under /builds, so the active item is always visible.
+    /// </summary>
+    private void UpdateExpansionFromUrl(string url)
+    {
+        // Normalise to just the path portion
+        var uri  = new Uri(url);
+        var path = uri.AbsolutePath.TrimStart('/');
+
+        _buildsExpanded = path.StartsWith("builds", StringComparison.OrdinalIgnoreCase);
+
+        if (_manifest is null) return;
+
+        foreach (var build in _manifest.Builds.Where(b => b.Subpages is { Count: > 0 }))
+        {
+            _buildGroupExpanded[build.Slug] =
+                path.StartsWith($"builds/{build.Slug}", StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    /// <summary>
+    /// Returns the display title for a sub-page — from the fetched frontmatter
+    /// cache if available, falling back to a formatted version of the slug stem.
+    /// </summary>
+    private string GetSubPageTitle(string slug, string subpage)
+    {
+        var key = $"{slug}/{subpage}";
+        if (_subpageTitles.TryGetValue(key, out var title)) return title;
+        return TitleCaseFromSlug(subpage);
+    }
+
+    private static string TitleCaseFromSlug(string slug) =>
+        string.Join(" ", slug.Split('-')
+            .Select(w => w.Length > 0 ? char.ToUpper(w[0]) + w[1..] : w));
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= OnLocationChanged;
+    }
+}
