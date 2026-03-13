@@ -1,4 +1,5 @@
 using Blazor_Personal_Site.Components;
+using Blazor_Personal_Site.Services;
 using MudBlazor.Services;
 
 namespace Blazor_Personal_Site
@@ -11,6 +12,11 @@ namespace Blazor_Personal_Site
 
             // Add MudBlazor services
             builder.Services.AddMudServices();
+
+            // HttpClient factory for CadBuildsService (avoids socket exhaustion)
+            builder.Services.AddHttpClient();
+            // Singleton so the in-memory cache is shared across all requests
+            builder.Services.AddSingleton<CadBuildsService>();
 
             // Add services to the container.
             builder.Services.AddRazorComponents()

@@ -1,0 +1,157 @@
+/* ── BuildCard ──────────────────────────────────────────────────────────── */
+
+.build-card {
+    background: var(--color-tephra);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    outline: none;
+}
+
+.build-card:hover,
+.build-card:focus-visible {
+    transform: translateY(-4px);
+    box-shadow:
+        0 8px 28px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(156, 194, 64, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+/* ── Cover image ── */
+
+.build-card-cover {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: var(--color-ash-plain);
+    flex-shrink: 0;
+}
+
+.build-card-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.build-card:hover .build-card-cover img {
+    transform: scale(1.03);
+}
+
+.build-card-cover--placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.2;
+}
+
+/* ── Card body ── */
+
+.build-card-body {
+    padding: 16px 18px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    flex: 1;
+}
+
+/* ── Meta badges row ── */
+
+.build-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 2px;
+}
+
+.build-card-badge {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 999px;
+}
+
+.build-card-badge--tool {
+    background: rgba(138, 155, 168, 0.18);
+    color: var(--color-glacial-silt);
+}
+
+.build-card-badge--complete {
+    background: rgba(156, 194, 64, 0.15);
+    color: var(--color-lichen-flash);
+}
+
+.build-card-badge--in-progress {
+    background: rgba(200, 170, 60, 0.15);
+    color: #c8b44a;
+}
+
+.build-card-badge--abandoned {
+    background: rgba(180, 80, 70, 0.15);
+    color: #c07070;
+}
+
+.build-card-badge--status {
+    background: rgba(138, 155, 168, 0.12);
+    color: var(--color-text-muted);
+}
+
+/* ── Title & description ── */
+
+.build-card-title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    line-height: 1.3;
+}
+
+.build-card-desc {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    line-height: 1.55;
+    flex: 1;
+    /* Clamp to 3 lines so all cards stay uniform height */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* ── Tags ── */
+
+.build-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 2px;
+}
+
+.build-card-tag {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(94, 122, 42, 0.2);
+    color: var(--color-highland-green);
+    letter-spacing: 0.03em;
+}
+
+/* ── Date ── */
+
+.build-card-date {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    opacity: 0.55;
+    margin-top: 2px;
+}
