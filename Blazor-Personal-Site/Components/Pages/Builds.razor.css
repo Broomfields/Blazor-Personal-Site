@@ -54,10 +54,21 @@
     display: block;
 }
 
-/* ── Title ── */
+/* ── Title row (title + optional right-anchored links) ── */
+
+.build-detail-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 0 0 16px;
+}
 
 .build-detail-title {
-    margin: 0 0 16px;
+    margin: 0;
+    flex: 1;
+    min-width: 0; /* prevents long titles overflowing the flex row */
     font-size: 2rem;
     font-weight: 700;
     letter-spacing: -0.02em;
@@ -116,7 +127,7 @@
     letter-spacing: 0.03em;
 }
 
-/* ── Shared section label (Gallery, Available on, Credits) ── */
+/* ── Shared section label (Gallery, Credits) ── */
 
 .build-section-label {
     font-size: 0.72rem;
@@ -128,10 +139,11 @@
     margin: 0 0 10px;
 }
 
-/* ── External links (Available on) ── */
+/* ── External links (title-row right side) ── */
 
 .build-detail-links {
-    margin-top: 22px;
+    flex-shrink: 0;
+    padding-top: 5px; /* optical alignment with title baseline */
 }
 
 .build-detail-links-row {

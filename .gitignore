@@ -365,3 +365,13 @@ FodyWeavers.xsd
 # macOS
 .DS_Store
 **/.DS_Store
+
+# dotnet secrets / local config overrides
+# Use this pattern for any appsettings file that contains secrets or
+# machine-specific values that should never be committed.
+# Prefer dotnet user-secrets for actual credentials.
+appsettings.*.Local.json
+
+# Environment variable files
+.env
+.env.*

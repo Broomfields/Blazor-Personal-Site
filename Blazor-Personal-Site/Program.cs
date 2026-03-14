@@ -1,5 +1,7 @@
 using Blazor_Personal_Site.Components;
 using Blazor_Personal_Site.Services;
+using Blazor_Personal_Site.Services.DataSources;
+using Microsoft.Extensions.FileProviders;
 using MudBlazor.Services;
 
 namespace Blazor_Personal_Site
@@ -13,10 +15,43 @@ namespace Blazor_Personal_Site
             // Add MudBlazor services
             builder.Services.AddMudServices();
 
-            // HttpClient factory for CadBuildsService (avoids socket exhaustion)
+            // HttpClient factory — used by GitHubCmsDataSource (avoids socket exhaustion)
             builder.Services.AddHttpClient();
-            // Singleton so the in-memory cache is shared across all requests
-            builder.Services.AddSingleton<CadBuildsService>();
+
+            // ── CMS data sources ──────────────────────────────────────────────────
+            // "GitHub" (default) fetches from GitHub over HTTP.
+            // "Local"  reads directly from local repo clones on disk,
+            //          enabling testing against local content branches without pushing.
+            // Controlled via "Cms:Source" in appsettings (override in
+            // appsettings.Development.json to activate local mode during development).
+            //
+            // Each CMS is registered as a keyed ICmsDataSource so future consumers
+            // (ProgrammingService, WritingService, …) can each inject their own source.
+            // To add a new CMS: register another keyed entry here, add a corresponding
+            // service below, and add its key to the local dev CDN list further down.
+            var cmsSource = builder.Configuration["Cms:Source"] ?? "GitHub";
+
+            if (cmsSource.Equals("Local", StringComparison.OrdinalIgnoreCase))
+            {
+                builder.Services.AddKeyedSingleton<ICmsDataSource>("builds", (sp, _) =>
+                    new LocalCmsDataSource(
+                        repoRoot:      builder.Configuration["Cms:LocalPaths:builds"] ?? string.Empty,
+                        contentFolder: "builds",
+                        logger:        sp.GetRequiredService<ILogger<LocalCmsDataSource>>()));
+            }
+            else
+            {
+                builder.Services.AddKeyedSingleton<ICmsDataSource>("builds", (sp, _) =>
+                    new GitHubCmsDataSource(
+                        repoName:          "PS-CMS-Builds",
+                        contentFolder:     "builds",
+                        httpClientFactory: sp.GetRequiredService<IHttpClientFactory>(),
+                        logger:            sp.GetRequiredService<ILogger<GitHubCmsDataSource>>()));
+            }
+
+            // ── CMS consumer services ─────────────────────────────────────────────
+            // Singletons so in-memory caches are shared across all requests.
+            builder.Services.AddSingleton<BuildsService>();
 
             // Add services to the container.
             builder.Services.AddRazorComponents()
@@ -33,6 +68,39 @@ namespace Blazor_Personal_Site
             }
 
             app.UseHttpsRedirection();
+
+            // ── Local dev CDN ─────────────────────────────────────────────────────
+            // When using LocalCmsDataSource, asset URLs are root-relative paths under
+            // /dev-cdn/{contentFolder}/. Each registered local source gets its own
+            // PhysicalFileProvider mounted at that sub-path so the browser can fetch
+            // images through the running dev server without needing file:// access.
+            // To add a new local CMS source: just add its key to the list below.
+            if (cmsSource.Equals("Local", StringComparison.OrdinalIgnoreCase))
+            {
+                foreach (var key in new[] { "builds" })
+                {
+                    var source = app.Services.GetRequiredKeyedService<ICmsDataSource>(key)
+                        as LocalCmsDataSource;
+
+                    if (source is null) continue;
+
+                    var physPath = Path.Combine(source.RepoRoot, source.ContentFolder);
+                    if (!Directory.Exists(physPath))
+                    {
+                        app.Logger.LogWarning(
+                            "Local CMS path for '{Key}' not found: {Path}. " +
+                            "Asset serving is disabled for this source.",
+                            key, physPath);
+                        continue;
+                    }
+
+                    app.UseStaticFiles(new StaticFileOptions
+                    {
+                        FileProvider = new PhysicalFileProvider(physPath),
+                        RequestPath  = $"{LocalCmsDataSource.DevCdnPrefix}/{source.ContentFolder}"
+                    });
+                }
+            }
 
             app.UseStaticFiles();
             app.UseAntiforgery();
