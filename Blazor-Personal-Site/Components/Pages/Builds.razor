@@ -4,7 +4,7 @@
 
 @using Blazor_Personal_Site.Models
 @using Blazor_Personal_Site.Services
-@inject CadBuildsService BuildsService
+@inject BuildsService BuildsService
 @inject NavigationManager Nav
 
 <PageTitle>@ComputedPageTitle</PageTitle>
@@ -240,7 +240,28 @@ else
                         </div>
                     }
 
-                    <h1 class="build-detail-title">@_currentBuild.Title</h1>
+                    <div class="build-detail-title-row">
+                        <h1 class="build-detail-title">@_currentBuild.Title</h1>
+                        @if (_currentBuild.Links is { Count: > 0 })
+                        {
+                            <div class="build-detail-links">
+                                <div class="build-detail-links-row">
+                                    @foreach (var link in _currentBuild.Links)
+                                    {
+                                        <a class="build-detail-link-btn"
+                                           href="@link.Url"
+                                           target="_blank"
+                                           rel="noopener noreferrer">
+                                            @link.Label
+                                            <MudIcon Icon="@Icons.Material.Filled.OpenInNew"
+                                                     Size="Size.Small"
+                                                     Class="build-detail-link-icon" />
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
 
                     <div class="build-detail-meta">
                         @if (!string.IsNullOrEmpty(_currentBuild.Date))
@@ -279,28 +300,6 @@ else
                             {
                                 <span class="build-detail-tag">@tag</span>
                             }
-                        </div>
-                    }
-
-                    <!-- ── External links (Printables, MakerWorld, etc.) ── -->
-                    @if (_currentBuild.Links is { Count: > 0 })
-                    {
-                        <div class="build-detail-links">
-                            <p class="build-section-label">Available on</p>
-                            <div class="build-detail-links-row">
-                                @foreach (var link in _currentBuild.Links)
-                                {
-                                    <a class="build-detail-link-btn"
-                                       href="@link.Url"
-                                       target="_blank"
-                                       rel="noopener noreferrer">
-                                        @link.Label
-                                        <MudIcon Icon="@Icons.Material.Filled.OpenInNew"
-                                                 Size="Size.Small"
-                                                 Class="build-detail-link-icon" />
-                                    </a>
-                                }
-                            </div>
                         </div>
                     }
 
