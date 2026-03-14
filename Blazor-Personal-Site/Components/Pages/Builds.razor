@@ -337,6 +337,54 @@ else
                         <BuildLightbox Items="@_currentBuild.Gallery" Slug="@_currentBuild.Slug" />
                     </div>
                 }
+
+                <!-- ── Files (downloadable assets) ── -->
+                @if (_currentBuild.Files is { Count: > 0 })
+                {
+                    <div class="build-detail-files">
+                        <p class="build-section-label">Files</p>
+                        <div class="build-detail-files-row">
+                            @foreach (var file in VisibleFiles(_currentBuild.Files))
+                            {
+                                <a class="build-detail-file-btn"
+                                   href="@BuildsService.ResolveCdnUrl(_currentBuild.Slug, file.Src)"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   download>
+                                    <MudIcon Icon="@Icons.Material.Filled.InsertDriveFile"
+                                             Size="Size.Small"
+                                             Class="build-detail-file-icon" />
+                                    @file.Label
+                                </a>
+                            }
+                        </div>
+                        @if (_currentBuild.Files.Count > FilesInitialVisible)
+                        {
+                            <button class="build-files-toggle"
+                                    @onclick="@(() => _filesExpanded = !_filesExpanded)"
+                                    aria-expanded="@_filesExpanded.ToString().ToLower()">
+                                @if (_filesExpanded)
+                                {
+                                    <span>Show less</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="18 15 12 9 6 15"/>
+                                    </svg>
+                                }
+                                else
+                                {
+                                    <span>Show @(_currentBuild.Files.Count - FilesInitialVisible) more</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="6 9 12 15 18 9"/>
+                                    </svg>
+                                }
+                            </button>
+                        }
+                    </div>
+                }
             }
 
             <!-- Markdown body.
@@ -406,6 +454,14 @@ else
     // Cached sub-page display titles (stem → title) so the nav cards
     // can show proper names once the titles are fetched in the background.
     private readonly Dictionary<string, string> _subpageTitleCache = new();
+
+    // ── Files expand / collapse state ────────────────────────────────────────
+
+    private const int FilesInitialVisible = 3;
+    private bool _filesExpanded = false;
+
+    private IEnumerable<FileItem> VisibleFiles(List<FileItem> files) =>
+        _filesExpanded ? files : files.Take(FilesInitialVisible);
 
     // ── Tag filter state ──────────────────────────────────────────────────────
     // Multi-select: zero or more active tags, OR-combined.
@@ -520,6 +576,7 @@ else
             _subpageHtml  = null;
             _subpageTitle = null;
             _subpageError = false;
+            _filesExpanded = false;
             await LoadBuildAsync();
         }
     }

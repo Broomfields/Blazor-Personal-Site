@@ -85,4 +85,13 @@ public class BuildEntry
     /// </summary>
     [JsonPropertyName("credits")]
     public List<CreditItem>? Credits { get; set; }
+
+    /// <summary>
+    /// Downloadable files for this build (STL, source files, etc.).
+    /// Each entry has a <c>Src</c> path (relative or bare stem) and a
+    /// descriptive <c>Label</c> shown as the link text.
+    /// Absent when the build has no downloadable files.
+    /// </summary>
+    [JsonPropertyName("files")]
+    public List<FileItem>? Files { get; set; }
 }
