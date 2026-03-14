@@ -14,36 +14,51 @@
 
     @if (_manifest is not null)
     {
-        <!-- Builds group — expands to show each build, and sub-pages nested within -->
-        <MudNavGroup Title="Builds"
-                     Icon="@Icons.Material.Filled.Build"
-                     Href="builds"
-                     @bind-Expanded="_buildsExpanded">
-            @foreach (var build in _manifest.Builds)
-            {
-                @if (build.Subpages is { Count: > 0 })
+        <!-- Builds: nav link navigates, button toggles expand -->
+        <div style="position: relative;">
+            <MudNavLink Href="builds" Match="NavLinkMatch.All"
+                        Icon="@Icons.Material.Filled.Build"
+                        Style="padding-right: 40px;">Builds</MudNavLink>
+            <MudIconButton Icon="@(_buildsExpanded ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
+                           OnClick="@(() => _buildsExpanded = !_buildsExpanded)"
+                           Size="Size.Small"
+                           Style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); z-index: 1;" />
+        </div>
+        <MudCollapse Expanded="_buildsExpanded">
+            <div class="pl-4">
+                @foreach (var build in _manifest.Builds)
                 {
-                    <!-- Build with sub-pages: nested group -->
-                    <MudNavGroup Title="@build.Title"
-                                 Href="@($"builds/{build.Slug}")"
-                                 Expanded="@_buildGroupExpanded.GetValueOrDefault(build.Slug)"
-                                 ExpandedChanged="@((bool v) => _buildGroupExpanded[build.Slug] = v)">
-                        @foreach (var sp in build.Subpages)
-                        {
-                            var spSlug = sp;
-                            <MudNavLink Href="@($"builds/{build.Slug}/{spSlug}")">
-                                @GetSubPageTitle(build.Slug, spSlug)
-                            </MudNavLink>
-                        }
-                    </MudNavGroup>
+                    @if (build.Subpages is { Count: > 0 })
+                    {
+                        <!-- Build with sub-pages: split nav header -->
+                        <div style="position: relative;">
+                            <MudNavLink Href="@($"builds/{build.Slug}")"
+                                        Style="padding-right: 40px;">@build.Title</MudNavLink>
+                            <MudIconButton Icon="@(_buildGroupExpanded.GetValueOrDefault(build.Slug) ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
+                                           OnClick="@(() => _buildGroupExpanded[build.Slug] = !_buildGroupExpanded.GetValueOrDefault(build.Slug))"
+                                           Size="Size.Small"
+                                           Style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); z-index: 1;" />
+                        </div>
+                        <MudCollapse Expanded="@_buildGroupExpanded.GetValueOrDefault(build.Slug)">
+                            <div class="pl-4">
+                                @foreach (var sp in build.Subpages)
+                                {
+                                    var spSlug = sp;
+                                    <MudNavLink Href="@($"builds/{build.Slug}/{spSlug}")">
+                                        @GetSubPageTitle(build.Slug, spSlug)
+                                    </MudNavLink>
+                                }
+                            </div>
+                        </MudCollapse>
+                    }
+                    else
+                    {
+                        <!-- Build without sub-pages: simple link -->
+                        <MudNavLink Href="@($"builds/{build.Slug}")">@build.Title</MudNavLink>
+                    }
                 }
-                else
-                {
-                    <!-- Build without sub-pages: simple link -->
-                    <MudNavLink Href="@($"builds/{build.Slug}")">@build.Title</MudNavLink>
-                }
-            }
-        </MudNavGroup>
+            </div>
+        </MudCollapse>
     }
     else
     {
