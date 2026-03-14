@@ -235,7 +235,7 @@ else
                     {
                         <div class="build-detail-cover">
                             <img src="@BuildsService.ResolveCdnUrl(_currentBuild.Slug, _currentBuild.Cover)"
-                                 alt="@_currentBuild.Title"
+                                 alt="@(!string.IsNullOrEmpty(_currentBuild.CoverAlt) ? _currentBuild.CoverAlt : _currentBuild.Title)"
                                  loading="eager" />
                         </div>
                     }
@@ -257,6 +257,13 @@ else
                                 @_currentBuild.CadTool
                             </span>
                         }
+                        @if (!string.IsNullOrEmpty(_currentBuild.License))
+                        {
+                            <span class="build-detail-meta-item">
+                                <MudIcon Icon="@Icons.Material.Filled.Copyright" Size="Size.Small" />
+                                @_currentBuild.License
+                            </span>
+                        }
                         @if (!string.IsNullOrEmpty(_currentBuild.Status))
                         {
                             <span class="build-detail-status @GetStatusCssClass(_currentBuild.Status)">
@@ -272,6 +279,28 @@ else
                             {
                                 <span class="build-detail-tag">@tag</span>
                             }
+                        </div>
+                    }
+
+                    <!-- ── External links (Printables, MakerWorld, etc.) ── -->
+                    @if (_currentBuild.Links is { Count: > 0 })
+                    {
+                        <div class="build-detail-links">
+                            <p class="build-section-label">Available on</p>
+                            <div class="build-detail-links-row">
+                                @foreach (var link in _currentBuild.Links)
+                                {
+                                    <a class="build-detail-link-btn"
+                                       href="@link.Url"
+                                       target="_blank"
+                                       rel="noopener noreferrer">
+                                        @link.Label
+                                        <MudIcon Icon="@Icons.Material.Filled.OpenInNew"
+                                                 Size="Size.Small"
+                                                 Class="build-detail-link-icon" />
+                                    </a>
+                                }
+                            </div>
                         </div>
                     }
 
@@ -300,6 +329,15 @@ else
                         </div>
                     </div>
                 }
+
+                <!-- ── Gallery (manifest images, Blazor lightbox) ── -->
+                @if (_currentBuild.Gallery is { Count: > 0 })
+                {
+                    <div class="build-detail-gallery">
+                        <p class="build-section-label">Gallery</p>
+                        <BuildLightbox Items="@_currentBuild.Gallery" Slug="@_currentBuild.Slug" />
+                    </div>
+                }
             }
 
             <!-- Markdown body.
@@ -313,6 +351,30 @@ else
                     <div class="build-content">
                         @((MarkupString)_buildHtml)
                     </div>
+                </div>
+            }
+
+            <!-- ── Credits (third-party assets used in this build) ── -->
+            @if (_currentBuild?.Credits is { Count: > 0 })
+            {
+                <div class="build-detail-credits">
+                    <p class="build-section-label">Credits</p>
+                    <ul class="build-credits-list">
+                        @foreach (var credit in _currentBuild.Credits)
+                        {
+                            <li class="build-credit-item">
+                                <a class="build-credit-link"
+                                   href="@credit.Url"
+                                   target="_blank"
+                                   rel="noopener noreferrer">@credit.Label</a>
+                                <span class="build-credit-by">by @credit.Author</span>
+                                @if (!string.IsNullOrEmpty(credit.License))
+                                {
+                                    <span class="build-credit-license">@credit.License</span>
+                                }
+                            </li>
+                        }
+                    </ul>
                 </div>
             }
         }
@@ -396,17 +458,21 @@ else
                          || t.Contains(_tagQuery, StringComparison.OrdinalIgnoreCase)))
             .ToList();
 
-    // Builds visible in the grid — AND logic across all selected tags
+    // Builds visible in the grid — filtered by active tags, then sorted so
+    // featured builds always appear first (stable sort preserves manifest order
+    // within each group).
     private List<BuildEntry> FilteredBuilds
     {
         get
         {
             if (_manifest is null) return new List<BuildEntry>();
-            if (_selectedTags.Count == 0) return _manifest.Builds;
 
-            // "All" ensures the build contains every single tag in your _selectedTags list
-            return _manifest.Builds
-                .Where(b => _selectedTags.All(t => b.Tags.Contains(t)))
+            var source = _selectedTags.Count == 0
+                ? _manifest.Builds
+                : _manifest.Builds.Where(b => _selectedTags.All(t => b.Tags.Contains(t)));
+
+            return source
+                .OrderByDescending(b => b.Featured)
                 .ToList();
         }
     }
