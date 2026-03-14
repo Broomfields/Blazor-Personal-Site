@@ -184,6 +184,75 @@
     margin-bottom: 40px;
 }
 
+/* ── Files section ── */
+
+.build-detail-files {
+    margin-top: 36px;
+    margin-bottom: 40px;
+}
+
+.build-detail-files-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.build-detail-file-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 16px;
+    border-radius: 10px;
+    background: var(--color-tephra);
+    border: 1px solid var(--color-cinder);
+    color: var(--color-text-primary);
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.build-detail-file-btn:hover {
+    background: var(--color-cinder);
+    border-color: rgba(156, 194, 64, 0.4);
+    color: var(--color-lichen-flash);
+}
+
+.build-detail-file-icon {
+    opacity: 0.45;
+    flex-shrink: 0;
+}
+
+.build-detail-file-btn:hover .build-detail-file-icon {
+    opacity: 0.7;
+}
+
+/* ── Files expand / collapse toggle ── */
+
+.build-files-toggle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    opacity: 0.55;
+    padding: 4px 2px;
+    transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.build-files-toggle:hover {
+    opacity: 1;
+    color: var(--color-lichen-flash);
+}
+
+.build-files-toggle svg {
+    flex-shrink: 0;
+}
+
 /* ── Credits section ── */
 
 .build-detail-credits {
