@@ -116,6 +116,112 @@
     letter-spacing: 0.03em;
 }
 
+/* ── Shared section label (Gallery, Available on, Credits) ── */
+
+.build-section-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    opacity: 0.55;
+    margin: 0 0 10px;
+}
+
+/* ── External links (Available on) ── */
+
+.build-detail-links {
+    margin-top: 22px;
+}
+
+.build-detail-links-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.build-detail-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 16px;
+    border-radius: 10px;
+    background: var(--color-tephra);
+    border: 1px solid var(--color-cinder);
+    color: var(--color-text-primary);
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.build-detail-link-btn:hover {
+    background: var(--color-cinder);
+    border-color: rgba(156, 194, 64, 0.4);
+    color: var(--color-lichen-flash);
+}
+
+.build-detail-link-icon {
+    opacity: 0.45;
+}
+
+/* ── Gallery section ── */
+
+.build-detail-gallery {
+    margin-top: 36px;
+    margin-bottom: 40px;
+}
+
+/* ── Credits section ── */
+
+.build-detail-credits {
+    margin-top: 48px;
+    padding-top: 28px;
+    border-top: 1px solid var(--color-cinder);
+}
+
+.build-credits-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.build-credit-item {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+}
+
+.build-credit-link {
+    color: var(--color-lichen-flash);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.15s ease;
+}
+
+.build-credit-link:hover {
+    border-bottom-color: var(--color-lichen-flash);
+}
+
+.build-credit-by {
+    opacity: 0.75;
+}
+
+.build-credit-license {
+    font-size: 0.75rem;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: rgba(138, 155, 168, 0.12);
+    color: var(--color-text-muted);
+    opacity: 0.75;
+}
+
 /* ══════════════════════════════════════════════
    Sub-page view — parent build label
    ══════════════════════════════════════════════ */
@@ -375,25 +481,22 @@
  * these ::deep selectors an [b-xxxx]-attributed ancestor to match against.
  * ──────────────────────────────────────────────────────────────────────── */
 
-/* Wrapper: block-level, centred, constrains the image */
+/* Wrapper: block-level, centred, constrains the image.
+ * Note: cursor and zoom-hint are intentionally omitted — markdown images
+ * are display-only and no longer open a lightbox. The .build-img-hint SVG
+ * is still injected by WrapImages() but is hidden via the rule below. */
 ::deep .build-content .build-img-wrap {
     display: block;
     position: relative;
     width: fit-content;
     max-width: 100%;
     margin: 24px auto;
-    cursor: zoom-in;
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 3px 14px rgba(0, 0, 0, 0.45);
-    transition: box-shadow 0.2s ease;
     /* Enforce consistent max height on the wrapper so images never blow out */
     max-height: 260px;
     line-height: 0; /* kill inline gap below the img */
-}
-
-::deep .build-content .build-img-wrap:hover {
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.65);
 }
 
 /* The image itself */
@@ -404,35 +507,11 @@
     width: auto;
     height: auto;
     border-radius: 8px;
-    transition: transform 0.22s ease, filter 0.22s ease;
 }
 
-::deep .build-content .build-img-wrap:hover img {
-    transform: scale(1.04);
-    filter: brightness(0.78); /* dim slightly so the zoom icon reads clearly */
-}
-
-/* Zoom-hint overlay — centred magnifier icon, fades in on hover */
+/* Zoom-hint overlay — hidden; lightbox is restricted to the gallery component */
 ::deep .build-content .build-img-hint {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    pointer-events: none;
-}
-
-::deep .build-content .build-img-hint svg {
-    width: 36px;
-    height: 36px;
-    color: #fff;
-    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.8));
-}
-
-::deep .build-content .build-img-wrap:hover .build-img-hint {
-    opacity: 1;
+    display: none;
 }
 
 ::deep .build-content a {

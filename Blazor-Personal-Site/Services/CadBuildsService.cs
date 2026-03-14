@@ -12,10 +12,10 @@ namespace Blazor_Personal_Site.Services;
 /// </summary>
 public class CadBuildsService
 {
-    private const string RepoOwner  = "Broomfields";
-    private const string RepoName   = "PS-CMS-Builds";
-    private const string Branch     = "main";
-    private const string RawBase     = $"https://raw.githubusercontent.com/{RepoOwner}/{RepoName}/{Branch}";
+    private const string RepoOwner = "Broomfields";
+    private const string RepoName = "PS-CMS-Builds";
+    private const string Branch = "main";
+    private const string RawBase = $"https://raw.githubusercontent.com/{RepoOwner}/{RepoName}/{Branch}";
     // The manifest is published as a GitHub Release asset, not committed to the branch.
     // Release assets are served from the releases/latest/download path.
     private const string ManifestUrl = $"https://github.com/{RepoOwner}/{RepoName}/releases/latest/download/manifest.json";

@@ -1,6 +1,7 @@
 @using Blazor_Personal_Site.Models
 
-<div class="build-card" @onclick="OnClick" role="button" tabindex="0"
+<div class="build-card @(Build.Featured ? "build-card--featured" : "")"
+     @onclick="OnClick" role="button" tabindex="0"
      @onkeydown="HandleKeyDown"
      aria-label="@($"View build: {Build.Title}")">
 
@@ -8,7 +9,7 @@
         @if (!string.IsNullOrEmpty(CoverUrl))
         {
             <img src="@CoverUrl"
-                 alt="@Build.Title"
+                 alt="@(!string.IsNullOrEmpty(Build.CoverAlt) ? Build.CoverAlt : Build.Title)"
                  loading="lazy"
                  onerror="this.closest('.build-card-cover').classList.add('build-card-cover--placeholder'); this.remove();" />
         }
@@ -31,6 +32,12 @@
             @if (!string.IsNullOrEmpty(statusLabel))
             {
                 <span class="build-card-badge @statusClass">@statusLabel</span>
+            }
+            @if (Build.Featured)
+            {
+                <span class="build-card-featured-star" title="Featured build" aria-label="Featured build">
+                    <MudIcon Icon="@Icons.Material.Filled.Star" Size="Size.Small" />
+                </span>
             }
         </div>
 
