@@ -4,7 +4,7 @@
 
 @using Blazor_Personal_Site.Models
 @using Blazor_Personal_Site.Services
-@inject BuildsService BuildsService
+@inject IBuildsService BuildsService
 @inject NavigationManager Nav
 
 <PageTitle>@ComputedPageTitle</PageTitle>
@@ -168,7 +168,7 @@ else if (Subpage is not null)
         {
             <!-- Sub-page header -->
             <div class="build-detail-header">
-                <h1 class="build-detail-title">@(_subpageTitle ?? TitleCaseFromSlug(Subpage))</h1>
+                <h1 class="build-detail-title">@(_subpageTitle ?? MarkdownProcessor.TitleCaseFromSlug(Subpage))</h1>
                 @if (_currentBuild is not null)
                 {
                     <div class="build-subpage-parent-label">
@@ -483,7 +483,7 @@ else
         {
             if (Subpage is not null)
             {
-                var spTitle = _subpageTitle ?? TitleCaseFromSlug(Subpage);
+                var spTitle = _subpageTitle ?? MarkdownProcessor.TitleCaseFromSlug(Subpage);
                 var buildTitle = _currentBuild?.Title;
                 return buildTitle is not null
                     ? $"{spTitle} — {buildTitle} — Builds — Shaun Broomfield"
@@ -710,11 +710,7 @@ else
     private string GetSubPageDisplayTitle(string subpage) =>
         _subpageTitleCache.TryGetValue(subpage, out var title)
             ? title
-            : TitleCaseFromSlug(subpage);
-
-    private static string TitleCaseFromSlug(string slug) =>
-        string.Join(" ", slug.Split('-')
-            .Select(w => w.Length > 0 ? char.ToUpper(w[0]) + w[1..] : w));
+            : MarkdownProcessor.TitleCaseFromSlug(subpage);
 
     private static string FormatDate(string isoDate)
     {

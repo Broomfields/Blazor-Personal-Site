@@ -4,7 +4,7 @@
 
 @using Blazor_Personal_Site.Models
 @using Blazor_Personal_Site.Services
-@inject ProgrammingService ProgrammingService
+@inject IProgrammingService ProgrammingService
 @inject NavigationManager Nav
 
 <PageTitle>@ComputedPageTitle</PageTitle>
@@ -164,7 +164,7 @@ else if (Subpage is not null)
         else
         {
             <div class="project-detail-header">
-                <h1 class="project-detail-title">@(_subpageTitle ?? TitleCaseFromSlug(Subpage))</h1>
+                <h1 class="project-detail-title">@(_subpageTitle ?? MarkdownProcessor.TitleCaseFromSlug(Subpage))</h1>
                 @if (_currentProject is not null)
                 {
                     <div class="project-subpage-parent-label">
@@ -294,7 +294,7 @@ else
                         <div class="project-detail-badges">
                             @foreach (var lang in _currentProject.Languages)
                             {
-                                <span class="project-detail-lang-badge" style="@GetLanguageStyle(lang)">@lang</span>
+                                <span class="project-detail-lang-badge" style="@LanguageStyles.GetBadgeStyle(lang)">@lang</span>
                             }
                             @foreach (var plat in _currentProject.Platform)
                             {
@@ -523,7 +523,7 @@ else
         {
             if (Subpage is not null)
             {
-                var spTitle   = _subpageTitle ?? TitleCaseFromSlug(Subpage);
+                var spTitle   = _subpageTitle ?? MarkdownProcessor.TitleCaseFromSlug(Subpage);
                 var projTitle = _currentProject?.Title;
                 return projTitle is not null
                     ? $"{spTitle} — {projTitle} — Programming — Shaun Broomfield"
@@ -731,11 +731,7 @@ else
     private string GetSubPageDisplayTitle(string subpage) =>
         _subpageTitleCache.TryGetValue(subpage, out var title)
             ? title
-            : TitleCaseFromSlug(subpage);
-
-    private static string TitleCaseFromSlug(string slug) =>
-        string.Join(" ", slug.Split('-')
-            .Select(w => w.Length > 0 ? char.ToUpper(w[0]) + w[1..] : w));
+            : MarkdownProcessor.TitleCaseFromSlug(subpage);
 
     private static string FormatDate(string isoDate)
     {
@@ -766,25 +762,4 @@ else
             _             => status
         };
 
-    // Consistent with ProjectCard language colours
-    private static string GetLanguageStyle(string language) =>
-        language.ToLowerInvariant() switch
-        {
-            "lua"        => "background:rgba(0,0,178,0.18);color:#5b8ef5;",
-            "c#"         => "background:rgba(104,33,122,0.2);color:#c375d9;",
-            "python"     => "background:rgba(53,114,165,0.2);color:#69b4f5;",
-            "javascript" => "background:rgba(200,170,0,0.15);color:#e0c05a;",
-            "typescript" => "background:rgba(49,120,198,0.2);color:#6ba3e0;",
-            "rust"       => "background:rgba(200,100,50,0.2);color:#e08a56;",
-            "go"         => "background:rgba(0,173,196,0.18);color:#50ccd8;",
-            "java"       => "background:rgba(176,114,25,0.2);color:#e0a050;",
-            "c++"        => "background:rgba(243,75,125,0.18);color:#e87aab;",
-            "c"          => "background:rgba(85,85,85,0.25);color:#aaa;",
-            "html"       => "background:rgba(200,70,30,0.18);color:#e0825a;",
-            "css"        => "background:rgba(30,100,200,0.18);color:#6fa8e0;",
-            "shell"      => "background:rgba(80,150,80,0.18);color:#7ec87e;",
-            "bash"       => "background:rgba(80,150,80,0.18);color:#7ec87e;",
-            "gdscript"   => "background:rgba(70,140,140,0.2);color:#60c0c0;",
-            _            => "background:rgba(138,155,168,0.14);color:#9ab0c0;",
-        };
 }

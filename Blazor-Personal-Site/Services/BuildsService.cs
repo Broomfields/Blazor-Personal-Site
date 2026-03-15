@@ -12,7 +12,7 @@ namespace Blazor_Personal_Site.Services;
 /// It is intentionally agnostic about <em>where</em> data comes from — that is the
 /// responsibility of the injected <see cref="ICmsDataSource"/> (GitHub or local filesystem).
 /// </summary>
-public class BuildsService
+public class BuildsService : IBuildsService
 {
     private static readonly JsonSerializerOptions JsonOptions =
         new() { PropertyNameCaseInsensitive = true };
@@ -170,6 +170,6 @@ public class BuildsService
             slug,
             rewriteLinks,
             resolveAssetUrl: _dataSource.ResolveAssetUrl,
-            imgWrapClass:    "build-img-wrap",
+            imgCssPrefix:    "build-img",
             baseRoute:       "builds");
 }

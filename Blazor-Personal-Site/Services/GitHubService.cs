@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Blazor_Personal_Site.Models;
+using Blazor_Personal_Site.Services.Abstractions;
 
 namespace Blazor_Personal_Site.Services;
 
@@ -12,7 +13,7 @@ namespace Blazor_Personal_Site.Services;
 /// Cache TTL is 30 minutes — repo stats change infrequently and the unauthenticated
 /// GitHub API allows only 60 requests per hour per IP.
 /// </summary>
-public class GitHubService
+public class GitHubService : IGitHubService
 {
     private static readonly JsonSerializerOptions JsonOptions =
         new() { PropertyNameCaseInsensitive = true };

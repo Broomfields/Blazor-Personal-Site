@@ -71,14 +71,16 @@ namespace Blazor_Personal_Site
             }
 
             // ── CMS consumer services ─────────────────────────────────────────────
-            // Singletons so in-memory caches are shared across all requests.
-            builder.Services.AddSingleton<BuildsService>();
-            builder.Services.AddSingleton<ProgrammingService>();
+            // Registered against their interfaces so Razor components depend on the
+            // abstraction, not the concrete type. Singletons so in-memory caches are
+            // shared across all requests.
+            builder.Services.AddSingleton<IBuildsService, BuildsService>();
+            builder.Services.AddSingleton<IProgrammingService, ProgrammingService>();
 
             // ── GitHub API service ────────────────────────────────────────────────
             // Fetches and caches live repo stats (stars, forks, etc.) for the
             // Programming page. Uses the named "github" HttpClient registered above.
-            builder.Services.AddSingleton<GitHubService>();
+            builder.Services.AddSingleton<IGitHubService, GitHubService>();
 
             // Add services to the container.
             builder.Services.AddRazorComponents()

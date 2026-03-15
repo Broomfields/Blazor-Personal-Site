@@ -11,14 +11,31 @@ namespace Blazor_Personal_Site.Services;
 /// → optionally rewrite links). Centralising the logic here means pipeline changes
 /// only need to be made in one place.
 /// </summary>
-public static class MarkdownProcessor
+public static partial class MarkdownProcessor
 {
     /// <summary>
     /// A single shared pipeline instance used by all CMS services.
     /// MarkdownPipeline is thread-safe once built.
     /// </summary>
-    public static readonly MarkdownPipeline Pipeline =
+    private static readonly MarkdownPipeline Pipeline =
         new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
+
+    // ── Source-generated compiled regexes ─────────────────────────────────────
+    //
+    // [GeneratedRegex] emits a compile-time Roslyn-generated state machine —
+    // faster than RegexOptions.Compiled and zero runtime JIT cost.
+
+    [GeneratedRegex(@"<img([^>]*?)(?:\s*/?)?>")]
+    private static partial Regex ImgTagRegex();
+
+    [GeneratedRegex(@"!\[([^\]]*)\]\((?!https?://|//)([^)]+)\)")]
+    private static partial Regex RelativeImageRegex();
+
+    [GeneratedRegex(@"href=""(?!https?://|//|[/#])([^""]+)""")]
+    private static partial Regex RelativeLinkRegex();
+
+    [GeneratedRegex(@"^title:\s*""?([^""\r\n]+)""?\s*$", RegexOptions.Multiline)]
+    private static partial Regex FrontMatterTitleRegex();
 
     // ── Public entry point ────────────────────────────────────────────────────
 
@@ -40,9 +57,10 @@ public static class MarkdownProcessor
     ///     Delegate that maps a (slug, relativePath) pair to a usable URL.
     ///     Provided by the active <see cref="Abstractions.ICmsDataSource"/>.
     /// </param>
-    /// <param name="imgWrapClass">
-    ///     CSS class applied to the container span that wraps each image.
-    ///     E.g. <c>"build-img-wrap"</c> or <c>"project-img-wrap"</c>.
+    /// <param name="imgCssPrefix">
+    ///     CSS class prefix for image wrappers, e.g. <c>"build-img"</c> or
+    ///     <c>"project-img"</c>. The wrapping span gets <c>{prefix}-wrap</c>
+    ///     and the zoom-hint span gets <c>{prefix}-hint</c>.
     /// </param>
     /// <param name="baseRoute">
     ///     The Blazor route segment used when rewriting links (e.g. <c>"builds"</c>
@@ -53,13 +71,13 @@ public static class MarkdownProcessor
         string slug,
         bool rewriteLinks,
         Func<string, string, string> resolveAssetUrl,
-        string imgWrapClass,
+        string imgCssPrefix,
         string baseRoute)
     {
         var body = StripFrontMatter(raw);
         body = RewriteRelativeImages(body, slug, resolveAssetUrl);
         var html = Markdown.ToHtml(body, Pipeline);
-        html = WrapImages(html, imgWrapClass);
+        html = WrapImages(html, imgCssPrefix);
         if (rewriteLinks)
             html = RewriteRelativeLinks(html, slug, baseRoute);
         return html;
@@ -75,17 +93,8 @@ public static class MarkdownProcessor
     public static string StripFrontMatter(string markdown)
     {
         var trimmed = markdown.TrimStart();
-        if (!trimmed.StartsWith("---")) return markdown;
-
-        var firstNewline = trimmed.IndexOf('\n');
-        if (firstNewline < 0) return markdown;
-
-        var closingIndex = trimmed.IndexOf("\n---", firstNewline);
-        if (closingIndex < 0) return markdown;
-
-        var bodyStart = closingIndex + 4; // length of "\n---"
-        if (bodyStart < trimmed.Length && trimmed[bodyStart] == '\r') bodyStart++;
-        if (bodyStart < trimmed.Length && trimmed[bodyStart] == '\n') bodyStart++;
+        if (!TryFindFrontMatterBounds(trimmed, out _, out var bodyStart))
+            return markdown;
 
         return trimmed[bodyStart..];
     }
@@ -97,19 +106,11 @@ public static class MarkdownProcessor
     public static string? ExtractFrontMatterTitle(string markdown)
     {
         var trimmed = markdown.TrimStart();
-        if (!trimmed.StartsWith("---")) return null;
-
-        var firstNewline = trimmed.IndexOf('\n');
-        if (firstNewline < 0) return null;
-
-        var closingIndex = trimmed.IndexOf("\n---", firstNewline);
-        if (closingIndex < 0) return null;
+        if (!TryFindFrontMatterBounds(trimmed, out var closingIndex, out _))
+            return null;
 
         var frontMatter = trimmed[..closingIndex];
-        var match = Regex.Match(
-            frontMatter,
-            @"^title:\s*""?([^""\r\n]+)""?\s*$",
-            RegexOptions.Multiline);
+        var match = FrontMatterTitleRegex().Match(frontMatter);
         return match.Success ? match.Groups[1].Value.Trim() : null;
     }
 
@@ -123,15 +124,48 @@ public static class MarkdownProcessor
         string.Join(" ", slug.Split('-')
             .Select(w => w.Length > 0 ? char.ToUpper(w[0]) + w[1..] : w));
 
-    // ── Private pipeline steps ────────────────────────────────────────────────
+    // ── Private helpers ───────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Locates the front matter block boundaries in an already-trimmed markdown string.
+    /// Returns <c>false</c> when no valid <c>--- … ---</c> block is present.
+    /// </summary>
+    /// <param name="trimmed">Markdown with leading whitespace already removed.</param>
+    /// <param name="closingIndex">Index of the closing <c>\n---</c> sequence.</param>
+    /// <param name="bodyStart">Index of the first character after the closing delimiter.</param>
+    private static bool TryFindFrontMatterBounds(
+        string trimmed, out int closingIndex, out int bodyStart)
+    {
+        closingIndex = -1;
+        bodyStart    = 0;
+
+        if (!trimmed.StartsWith("---")) return false;
+
+        var firstNewline = trimmed.IndexOf('\n');
+        if (firstNewline < 0) return false;
+
+        closingIndex = trimmed.IndexOf("\n---", firstNewline);
+        if (closingIndex < 0) return false;
+
+        bodyStart = closingIndex + 4; // length of "\n---"
+        if (bodyStart < trimmed.Length && trimmed[bodyStart] == '\r') bodyStart++;
+        if (bodyStart < trimmed.Length && trimmed[bodyStart] == '\n') bodyStart++;
+
+        return true;
+    }
 
     /// <summary>
     /// Wraps every &lt;img&gt; in the rendered HTML with a container span for
     /// layout purposes (max-height, centering, shadow) and injects a zoom-hint SVG
     /// icon (hidden via CSS; lightbox behaviour is handled by dedicated components).
+    /// The wrapping span gets class <c>{imgCssPrefix}-wrap</c> and the hint span
+    /// gets <c>{imgCssPrefix}-hint</c>.
     /// </summary>
-    private static string WrapImages(string html, string imgWrapClass)
+    private static string WrapImages(string html, string imgCssPrefix)
     {
+        var wrapClass = $"{imgCssPrefix}-wrap";
+        var hintClass = $"{imgCssPrefix}-hint";
+
         const string ZoomSvg =
             "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\" " +
             "viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" " +
@@ -142,12 +176,9 @@ public static class MarkdownProcessor
             "<line x1=\"8\" y1=\"11\" x2=\"14\" y2=\"11\"/>" +
             "</svg>";
 
-        var hintClass = imgWrapClass.Replace("-wrap", "-hint");
-
-        return Regex.Replace(
+        return ImgTagRegex().Replace(
             html,
-            @"<img([^>]*?)(?:\s*/?)?>",
-            $"<span class=\"{imgWrapClass}\"><img$1><span class=\"{hintClass}\" aria-hidden=\"true\">{ZoomSvg}</span></span>");
+            $"<span class=\"{wrapClass}\"><img$1><span class=\"{hintClass}\" aria-hidden=\"true\">{ZoomSvg}</span></span>");
     }
 
     /// <summary>
@@ -159,9 +190,8 @@ public static class MarkdownProcessor
         string slug,
         Func<string, string, string> resolveAssetUrl)
     {
-        return Regex.Replace(
+        return RelativeImageRegex().Replace(
             markdown,
-            @"!\[([^\]]*)\]\((?!https?://|//)([^)]+)\)",
             m =>
             {
                 var alt  = m.Groups[1].Value;
@@ -177,9 +207,8 @@ public static class MarkdownProcessor
     /// </summary>
     private static string RewriteRelativeLinks(string html, string slug, string baseRoute)
     {
-        return Regex.Replace(
+        return RelativeLinkRegex().Replace(
             html,
-            @"href=""(?!https?://|//|[/#])([^""]+)""",
             m => $"href=\"/{baseRoute}/{Uri.EscapeDataString(slug)}/{m.Groups[1].Value}\"");
     }
 }
