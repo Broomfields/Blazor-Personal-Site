@@ -1,0 +1,316 @@
+/* ── GitHubRepoPanel ─────────────────────────────────────────────────────── */
+
+.gh-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 28px;
+}
+
+/* ── Loading state ── */
+
+.gh-panel-loading {
+    display: flex;
+    align-items: center;
+    padding: 18px 0;
+    opacity: 0.4;
+}
+
+/* ══════════════════════════════════════════════
+   Card grid
+   ══════════════════════════════════════════════ */
+
+.gh-cards {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.3fr);
+    gap: 10px;
+    align-items: stretch;
+}
+
+@media (max-width: 600px) {
+    .gh-cards {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── Shared card shell ── */
+
+.gh-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--color-tephra);
+    border: 1px solid var(--color-cinder);
+    border-radius: 12px;
+}
+
+.gh-card-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    opacity: 0.45;
+    margin: 0;
+}
+
+/* ══════════════════════════════════════════════
+   Card 1 — Stats
+   ══════════════════════════════════════════════ */
+
+/* ── View on GitHub link ── */
+
+.gh-repo-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 12px;
+    border-radius: 8px;
+    background: var(--color-ash-plain);
+    border: 1px solid var(--color-cinder);
+    color: var(--color-text-primary);
+    text-decoration: none;
+    font-size: 0.83rem;
+    font-weight: 500;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    align-self: flex-start;
+}
+
+.gh-repo-link:hover {
+    background: var(--color-cinder);
+    border-color: rgba(156, 194, 64, 0.4);
+    color: var(--color-lichen-flash);
+}
+
+.gh-repo-link-logo {
+    flex-shrink: 0;
+    opacity: 0.85;
+}
+
+.gh-repo-link-ext {
+    opacity: 0.35;
+    flex-shrink: 0;
+}
+
+/* ── Stat items ── */
+
+.gh-stats-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 20px;
+    margin-top: auto;
+}
+
+.gh-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.gh-stat-icon {
+    opacity: 0.5;
+    flex-shrink: 0;
+}
+
+.gh-stat-val {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    line-height: 1;
+}
+
+.gh-stat-lbl {
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+    opacity: 0.55;
+}
+
+/* ── Last pushed timestamp ── */
+
+.gh-pushed {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+    opacity: 0.45;
+}
+
+/* ══════════════════════════════════════════════
+   Card 2 — Languages donut
+   ══════════════════════════════════════════════ */
+
+/* Donut is self-centred; legend rows stretch to full card width */
+
+.gh-card--langs {
+    align-items: stretch;
+}
+
+/*
+ * The wrap provides a 4 px "halo" ring in --color-ash-plain, giving even
+ * very dark segment colours (e.g. Lua navy) clear contrast against the card.
+ * The ::after pseudo-element punches the hole by matching the card background.
+ */
+
+.gh-donut-wrap {
+    position: relative;
+    width: 92px;
+    height: 92px;
+    border-radius: 50%;
+    background: var(--color-ash-plain);
+    flex-shrink: 0;
+    align-self: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gh-donut {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    position: relative;
+}
+
+.gh-donut::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--color-tephra);
+}
+
+/* ── Legend ── */
+
+.gh-lang-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    width: 100%;
+}
+
+.gh-lang-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.78rem;
+}
+
+.gh-lang-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.gh-lang-name {
+    flex: 1;
+    color: var(--color-text-primary);
+    opacity: 0.85;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gh-lang-pct {
+    color: var(--color-text-muted);
+    opacity: 0.55;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ══════════════════════════════════════════════
+   Card 3 — Recent activity
+   ══════════════════════════════════════════════ */
+
+.gh-commits {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.gh-commit {
+    display: grid;
+    grid-template-columns: 8px 1fr auto;
+    align-items: baseline;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--color-cinder);
+}
+
+.gh-commit:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.gh-commit:first-child {
+    padding-top: 0;
+}
+
+.gh-commit-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-cinder);
+    flex-shrink: 0;
+    align-self: center;
+    margin-top: 1px;
+}
+
+.gh-commit-msg {
+    font-size: 0.8rem;
+    color: var(--color-text-primary);
+    opacity: 0.8;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.4;
+}
+
+.gh-commit-date {
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+    opacity: 0.45;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════════
+   Topics chips (inside the repo stats card)
+   ══════════════════════════════════════════════ */
+
+.gh-topics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.gh-topic-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 100px;
+    background: rgba(49, 120, 198, 0.12);
+    border: 1px solid rgba(49, 120, 198, 0.25);
+    color: #6ba3e0;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    white-space: nowrap;
+}
+
+.gh-topic-chip:hover {
+    background: rgba(49, 120, 198, 0.22);
+    border-color: rgba(49, 120, 198, 0.45);
+    color: #89bcf0;
+}

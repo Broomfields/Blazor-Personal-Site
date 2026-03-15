@@ -18,6 +18,13 @@ namespace Blazor_Personal_Site
             // HttpClient factory — used by GitHubCmsDataSource (avoids socket exhaustion)
             builder.Services.AddHttpClient();
 
+            // Named HTTP client for the GitHub REST API.
+            // The API requires a User-Agent header on every request.
+            builder.Services.AddHttpClient("github", client =>
+            {
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("Blazor-Personal-Site/1.0");
+            });
+
             // ── CMS data sources ──────────────────────────────────────────────────
             // "GitHub" (default) fetches from GitHub over HTTP.
             // "Local"  reads directly from local repo clones on disk,
@@ -38,6 +45,12 @@ namespace Blazor_Personal_Site
                         repoRoot:      builder.Configuration["Cms:LocalPaths:builds"] ?? string.Empty,
                         contentFolder: "builds",
                         logger:        sp.GetRequiredService<ILogger<LocalCmsDataSource>>()));
+
+                builder.Services.AddKeyedSingleton<ICmsDataSource>("programming", (sp, _) =>
+                    new LocalCmsDataSource(
+                        repoRoot:      builder.Configuration["Cms:LocalPaths:programming"] ?? string.Empty,
+                        contentFolder: "projects",
+                        logger:        sp.GetRequiredService<ILogger<LocalCmsDataSource>>()));
             }
             else
             {
@@ -47,11 +60,24 @@ namespace Blazor_Personal_Site
                         contentFolder:     "builds",
                         httpClientFactory: sp.GetRequiredService<IHttpClientFactory>(),
                         logger:            sp.GetRequiredService<ILogger<GitHubCmsDataSource>>()));
+
+                builder.Services.AddKeyedSingleton<ICmsDataSource>("programming", (sp, _) =>
+                    new GitHubCmsDataSource(
+                        repoName:          "PS-CMS-Programming",
+                        contentFolder:     "projects",
+                        httpClientFactory: sp.GetRequiredService<IHttpClientFactory>(),
+                        logger:            sp.GetRequiredService<ILogger<GitHubCmsDataSource>>()));
             }
 
             // ── CMS consumer services ─────────────────────────────────────────────
             // Singletons so in-memory caches are shared across all requests.
             builder.Services.AddSingleton<BuildsService>();
+            builder.Services.AddSingleton<ProgrammingService>();
+
+            // ── GitHub API service ────────────────────────────────────────────────
+            // Fetches and caches live repo stats (stars, forks, etc.) for the
+            // Programming page. Uses the named "github" HttpClient registered above.
+            builder.Services.AddSingleton<GitHubService>();
 
             // Add services to the container.
             builder.Services.AddRazorComponents()
@@ -77,7 +103,7 @@ namespace Blazor_Personal_Site
             // To add a new local CMS source: just add its key to the list below.
             if (cmsSource.Equals("Local", StringComparison.OrdinalIgnoreCase))
             {
-                foreach (var key in new[] { "builds" })
+                foreach (var key in new[] { "builds", "programming" })
                 {
                     var source = app.Services.GetRequiredKeyedService<ICmsDataSource>(key)
                         as LocalCmsDataSource;

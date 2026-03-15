@@ -1,6 +1,7 @@
 @using Blazor_Personal_Site.Models
 @using Blazor_Personal_Site.Services
 @inject BuildsService BuildsService
+@inject ProgrammingService ProgrammingService
 @inject NavigationManager Nav
 @implements IDisposable
 
@@ -10,11 +11,60 @@
 
     <MudDivider Class="my-2" />
 
-    <MudNavLink Href="programming" Icon="@Icons.Material.Filled.Code">Programming</MudNavLink>
-
-    @if (_manifest is not null)
+    <!-- ── Programming ── -->
+    @if (_programmingManifest is not null)
     {
-        <!-- Builds: nav link navigates, button toggles expand -->
+        <div style="position: relative;">
+            <MudNavLink Href="programming" Match="NavLinkMatch.All"
+                        Icon="@Icons.Material.Filled.Code"
+                        Style="padding-right: 40px;">Programming</MudNavLink>
+            <MudIconButton Icon="@(_programmingExpanded ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
+                           OnClick="@(() => _programmingExpanded = !_programmingExpanded)"
+                           Size="Size.Small"
+                           Style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); z-index: 1;" />
+        </div>
+        <MudCollapse Expanded="_programmingExpanded">
+            <div class="pl-4">
+                @foreach (var project in _programmingManifest.Projects)
+                {
+                    @if (project.Subpages is { Count: > 0 })
+                    {
+                        <div style="position: relative;">
+                            <MudNavLink Href="@($"programming/{project.Slug}")"
+                                        Style="padding-right: 40px;">@project.Title</MudNavLink>
+                            <MudIconButton Icon="@(_programmingGroupExpanded.GetValueOrDefault(project.Slug) ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
+                                           OnClick="@(() => _programmingGroupExpanded[project.Slug] = !_programmingGroupExpanded.GetValueOrDefault(project.Slug))"
+                                           Size="Size.Small"
+                                           Style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); z-index: 1;" />
+                        </div>
+                        <MudCollapse Expanded="@_programmingGroupExpanded.GetValueOrDefault(project.Slug)">
+                            <div class="pl-4">
+                                @foreach (var sp in project.Subpages)
+                                {
+                                    var spSlug = sp;
+                                    <MudNavLink Href="@($"programming/{project.Slug}/{spSlug}")">
+                                        @GetProgrammingSubPageTitle(project.Slug, spSlug)
+                                    </MudNavLink>
+                                }
+                            </div>
+                        </MudCollapse>
+                    }
+                    else
+                    {
+                        <MudNavLink Href="@($"programming/{project.Slug}")">@project.Title</MudNavLink>
+                    }
+                }
+            </div>
+        </MudCollapse>
+    }
+    else
+    {
+        <MudNavLink Href="programming" Icon="@Icons.Material.Filled.Code">Programming</MudNavLink>
+    }
+
+    <!-- ── Builds ── -->
+    @if (_buildsManifest is not null)
+    {
         <div style="position: relative;">
             <MudNavLink Href="builds" Match="NavLinkMatch.All"
                         Icon="@Icons.Material.Filled.Build"
@@ -26,11 +76,10 @@
         </div>
         <MudCollapse Expanded="_buildsExpanded">
             <div class="pl-4">
-                @foreach (var build in _manifest.Builds)
+                @foreach (var build in _buildsManifest.Builds)
                 {
                     @if (build.Subpages is { Count: > 0 })
                     {
-                        <!-- Build with sub-pages: split nav header -->
                         <div style="position: relative;">
                             <MudNavLink Href="@($"builds/{build.Slug}")"
                                         Style="padding-right: 40px;">@build.Title</MudNavLink>
@@ -45,7 +94,7 @@
                                 {
                                     var spSlug = sp;
                                     <MudNavLink Href="@($"builds/{build.Slug}/{spSlug}")">
-                                        @GetSubPageTitle(build.Slug, spSlug)
+                                        @GetBuildSubPageTitle(build.Slug, spSlug)
                                     </MudNavLink>
                                 }
                             </div>
@@ -53,7 +102,6 @@
                     }
                     else
                     {
-                        <!-- Build without sub-pages: simple link -->
                         <MudNavLink Href="@($"builds/{build.Slug}")">@build.Title</MudNavLink>
                     }
                 }
@@ -62,7 +110,6 @@
     }
     else
     {
-        <!-- Manifest not yet loaded: show flat Builds link -->
         <MudNavLink Href="builds" Icon="@Icons.Material.Filled.Build">Builds</MudNavLink>
     }
 
@@ -75,66 +122,122 @@
 </MudNavMenu>
 
 @code {
-    private BuildManifest? _manifest;
+    // ── Builds state ──────────────────────────────────────────────────────────
 
-    // Whether the top-level Builds nav group is expanded
+    private BuildManifest? _buildsManifest;
     private bool _buildsExpanded;
-
-    // Per-build expansion state for builds that have sub-pages
     private readonly Dictionary<string, bool> _buildGroupExpanded = new();
+    private readonly Dictionary<string, string> _buildSubpageTitles = new();
 
-    // Sub-page display titles keyed as "slug/subpage"
-    private readonly Dictionary<string, string> _subpageTitles = new();
+    // ── Programming state ─────────────────────────────────────────────────────
+
+    private ProjectManifest? _programmingManifest;
+    private bool _programmingExpanded;
+    private readonly Dictionary<string, bool> _programmingGroupExpanded = new();
+    private readonly Dictionary<string, string> _programmingSubpageTitles = new();
 
     protected override async Task OnInitializedAsync()
     {
-        // Initialise expansion from the current URL
         UpdateExpansionFromUrl(Nav.Uri);
-
         Nav.LocationChanged += OnLocationChanged;
 
-        _manifest = await BuildsService.FetchManifestAsync();
+        // Load both manifests concurrently
+        var buildsTask      = BuildsService.FetchManifestAsync();
+        var programmingTask = ProgrammingService.FetchManifestAsync();
 
-        if (_manifest is not null)
+        await Task.WhenAll(buildsTask, programmingTask);
+
+        _buildsManifest = buildsTask.Result;
+        if (_buildsManifest is not null)
         {
-            // Seed build-group expansion state so every build group starts collapsed
-            // (the URL-based update above will expand the right one if needed).
-            foreach (var build in _manifest.Builds.Where(b => b.Subpages is { Count: > 0 }))
+            foreach (var build in _buildsManifest.Builds.Where(b => b.Subpages is { Count: > 0 }))
             {
                 if (!_buildGroupExpanded.ContainsKey(build.Slug))
                     _buildGroupExpanded[build.Slug] = false;
             }
-
-            // Re-apply URL expansion now that we know the build list
-            UpdateExpansionFromUrl(Nav.Uri);
-            StateHasChanged();
-
-            // Fetch sub-page titles in the background — nav cards update as each resolves
-            _ = LoadAllSubPageTitlesAsync();
         }
+
+        _programmingManifest = programmingTask.Result;
+        if (_programmingManifest is not null)
+        {
+            foreach (var project in _programmingManifest.Projects.Where(p => p.Subpages is { Count: > 0 }))
+            {
+                if (!_programmingGroupExpanded.ContainsKey(project.Slug))
+                    _programmingGroupExpanded[project.Slug] = false;
+            }
+        }
+
+        UpdateExpansionFromUrl(Nav.Uri);
+        StateHasChanged();
+
+        // Warm sub-page titles in the background
+        _ = LoadAllBuildSubPageTitlesAsync();
+        _ = LoadAllProgrammingSubPageTitlesAsync();
     }
 
-    private async Task LoadAllSubPageTitlesAsync()
-    {
-        if (_manifest is null) return;
+    // ── Builds sub-page title loading ─────────────────────────────────────────
 
-        var tasks = _manifest.Builds
+    private async Task LoadAllBuildSubPageTitlesAsync()
+    {
+        if (_buildsManifest is null) return;
+
+        var tasks = _buildsManifest.Builds
             .Where(b => b.Subpages is { Count: > 0 })
-            .SelectMany(b => b.Subpages!.Select(sp => LoadSubPageTitleAsync(b.Slug, sp)))
+            .SelectMany(b => b.Subpages!.Select(sp => LoadBuildSubPageTitleAsync(b.Slug, sp)))
             .ToList();
 
         await Task.WhenAll(tasks);
     }
 
-    private async Task LoadSubPageTitleAsync(string slug, string subpage)
+    private async Task LoadBuildSubPageTitleAsync(string slug, string subpage)
     {
         var title = await BuildsService.FetchSubPageTitleAsync(slug, subpage);
         if (title is not null)
         {
-            _subpageTitles[$"{slug}/{subpage}"] = title;
+            _buildSubpageTitles[$"{slug}/{subpage}"] = title;
             await InvokeAsync(StateHasChanged);
         }
     }
+
+    private string GetBuildSubPageTitle(string slug, string subpage)
+    {
+        var key = $"{slug}/{subpage}";
+        if (_buildSubpageTitles.TryGetValue(key, out var title)) return title;
+        return TitleCaseFromSlug(subpage);
+    }
+
+    // ── Programming sub-page title loading ───────────────────────────────────
+
+    private async Task LoadAllProgrammingSubPageTitlesAsync()
+    {
+        if (_programmingManifest is null) return;
+
+        var tasks = _programmingManifest.Projects
+            .Where(p => p.Subpages is { Count: > 0 })
+            .SelectMany(p => p.Subpages!.Select(sp => LoadProgrammingSubPageTitleAsync(p.Slug, sp)))
+            .ToList();
+
+        await Task.WhenAll(tasks);
+    }
+
+    private async Task LoadProgrammingSubPageTitleAsync(string slug, string subpage)
+    {
+        var title = await ProgrammingService.FetchSubPageTitleAsync(slug, subpage);
+        if (title is not null)
+        {
+            _programmingSubpageTitles[$"{slug}/{subpage}"] = title;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private string GetProgrammingSubPageTitle(string slug, string subpage)
+    {
+        var key = $"{slug}/{subpage}";
+        if (_programmingSubpageTitles.TryGetValue(key, out var title)) return title;
+        return TitleCaseFromSlug(subpage);
+    }
+
+    // ── URL-based expansion ───────────────────────────────────────────────────
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
     {
@@ -142,36 +245,31 @@
         InvokeAsync(StateHasChanged);
     }
 
-    /// <summary>
-    /// Expands the Builds group (and the appropriate build sub-group) when the
-    /// current URL is under /builds, so the active item is always visible.
-    /// </summary>
     private void UpdateExpansionFromUrl(string url)
     {
-        // Normalise to just the path portion
         var uri  = new Uri(url);
         var path = uri.AbsolutePath.TrimStart('/');
 
-        _buildsExpanded = path.StartsWith("builds", StringComparison.OrdinalIgnoreCase);
+        _buildsExpanded      = path.StartsWith("builds",      StringComparison.OrdinalIgnoreCase);
+        _programmingExpanded = path.StartsWith("programming", StringComparison.OrdinalIgnoreCase);
 
-        if (_manifest is null) return;
-
-        foreach (var build in _manifest.Builds.Where(b => b.Subpages is { Count: > 0 }))
+        if (_buildsManifest is not null)
         {
-            _buildGroupExpanded[build.Slug] =
-                path.StartsWith($"builds/{build.Slug}", StringComparison.OrdinalIgnoreCase);
+            foreach (var build in _buildsManifest.Builds.Where(b => b.Subpages is { Count: > 0 }))
+            {
+                _buildGroupExpanded[build.Slug] =
+                    path.StartsWith($"builds/{build.Slug}", StringComparison.OrdinalIgnoreCase);
+            }
         }
-    }
 
-    /// <summary>
-    /// Returns the display title for a sub-page — from the fetched frontmatter
-    /// cache if available, falling back to a formatted version of the slug stem.
-    /// </summary>
-    private string GetSubPageTitle(string slug, string subpage)
-    {
-        var key = $"{slug}/{subpage}";
-        if (_subpageTitles.TryGetValue(key, out var title)) return title;
-        return TitleCaseFromSlug(subpage);
+        if (_programmingManifest is not null)
+        {
+            foreach (var project in _programmingManifest.Projects.Where(p => p.Subpages is { Count: > 0 }))
+            {
+                _programmingGroupExpanded[project.Slug] =
+                    path.StartsWith($"programming/{project.Slug}", StringComparison.OrdinalIgnoreCase);
+            }
+        }
     }
 
     private static string TitleCaseFromSlug(string slug) =>

@@ -1,0 +1,180 @@
+/* ── ProjectCard ──────────────────────────────────────────────────────────── */
+
+.project-card {
+    background: var(--color-tephra);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    outline: none;
+}
+
+.project-card:hover,
+.project-card:focus-visible {
+    transform: translateY(-4px);
+    box-shadow:
+        0 8px 28px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(156, 194, 64, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+/* ── Featured star ── */
+
+.project-card-featured-star {
+    margin-left: auto;
+    color: #f5c542;
+    line-height: 0;
+    flex-shrink: 0;
+    pointer-events: none;
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4));
+}
+
+/* ── Cover image ── */
+
+.project-card-cover {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: var(--color-ash-plain);
+    flex-shrink: 0;
+}
+
+.project-card-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.project-card:hover .project-card-cover img {
+    transform: scale(1.03);
+}
+
+.project-card-cover--placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.2;
+}
+
+/* ── Card body ── */
+
+.project-card-body {
+    padding: 16px 18px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    flex: 1;
+}
+
+/* ── Meta badges row ── */
+
+.project-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 2px;
+}
+
+.project-card-badge {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 999px;
+}
+
+.project-card-badge--complete    { background: rgba(156, 194, 64, 0.15); color: var(--color-lichen-flash); }
+.project-card-badge--in-progress { background: rgba(200, 170, 60, 0.15); color: #c8b44a; }
+.project-card-badge--abandoned   { background: rgba(180, 80, 70, 0.15);  color: #c07070; }
+.project-card-badge--status      { background: rgba(138, 155, 168, 0.12); color: var(--color-text-muted); }
+
+/* ── Title & description ── */
+
+.project-card-title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    line-height: 1.3;
+}
+
+.project-card-desc {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    line-height: 1.55;
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* ── Language badges ── */
+
+.project-card-languages {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 2px;
+}
+
+.project-lang-badge {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    padding: 2px 8px;
+    border-radius: 999px;
+}
+
+/* ── Tags ── */
+
+.project-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.project-card-tag {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(94, 122, 42, 0.2);
+    color: var(--color-highland-green);
+    letter-spacing: 0.03em;
+}
+
+/* ── Footer row: date + optional GitHub hint icon ── */
+
+.project-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 2px;
+}
+
+.project-card-date {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    opacity: 0.55;
+}
+
+.project-card-repo-hint {
+    color: var(--color-text-muted);
+    opacity: 0.35;
+    line-height: 0;
+    transition: opacity 0.15s ease;
+}
+
+.project-card:hover .project-card-repo-hint {
+    opacity: 0.7;
+}
