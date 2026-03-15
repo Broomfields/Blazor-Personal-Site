@@ -1,0 +1,337 @@
+@inject IProgrammingService ProgrammingService
+
+@if (IsLoading)
+{
+    <div class="projects-loading">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+    </div>
+}
+else if (HasError)
+{
+    <div class="projects-error">
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
+            Hey, sorry — we couldn't load this project right now. Please try again in a moment.
+        </MudAlert>
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Refresh"
+                   OnClick="OnRetry">
+            Retry
+        </MudButton>
+    </div>
+}
+else
+{
+    @if (Project is not null)
+    {
+        <div class="project-detail-header">
+
+            <!-- Cover image -->
+            @if (!string.IsNullOrEmpty(Project.Cover))
+            {
+                <div class="project-detail-cover">
+                    <img src="@ProgrammingService.ResolveCdnUrl(Project.Slug, Project.Cover)"
+                         alt="@(!string.IsNullOrEmpty(Project.CoverAlt) ? Project.CoverAlt : Project.Title)"
+                         loading="eager" />
+                </div>
+            }
+
+            <!-- Title row -->
+            <div class="project-detail-title-row">
+                <h1 class="project-detail-title">@Project.Title</h1>
+                @if (Project.Links is { Count: > 0 })
+                {
+                    <div class="project-detail-links">
+                        <div class="project-detail-links-row">
+                            @foreach (var link in Project.Links)
+                            {
+                                <a class="project-detail-link-btn"
+                                   href="@link.Url"
+                                   target="_blank"
+                                   rel="noopener noreferrer">
+                                    @link.Label
+                                    <MudIcon Icon="@Icons.Material.Filled.OpenInNew"
+                                             Size="Size.Small"
+                                             Class="project-detail-link-icon" />
+                                </a>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Meta row: date, license, status -->
+            <div class="project-detail-meta">
+                @if (!string.IsNullOrEmpty(Project.Date))
+                {
+                    <span class="project-detail-meta-item">
+                        <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" />
+                        @FormatDate(Project.Date)
+                    </span>
+                }
+                @if (!string.IsNullOrEmpty(Project.License))
+                {
+                    <span class="project-detail-meta-item">
+                        <MudIcon Icon="@Icons.Material.Filled.Copyright" Size="Size.Small" />
+                        @Project.License
+                    </span>
+                }
+                @if (!string.IsNullOrEmpty(Project.Status))
+                {
+                    <span class="project-detail-status @GetStatusCssClass(Project.Status)">
+                        @GetStatusLabel(Project.Status)
+                    </span>
+                }
+            </div>
+
+            <!-- Badges: languages + platform + tags on one row -->
+            @{
+                var hasAnyBadges = Project.Languages.Count > 0
+                                || Project.Platform.Count > 0
+                                || Project.Tags.Count > 0;
+            }
+            @if (hasAnyBadges)
+            {
+                <div class="project-detail-badges">
+                    @foreach (var lang in Project.Languages)
+                    {
+                        <span class="project-detail-lang-badge" style="@LanguageStyles.GetBadgeStyle(lang)">@lang</span>
+                    }
+                    @foreach (var plat in Project.Platform)
+                    {
+                        <span class="project-platform-badge">@plat</span>
+                    }
+                    @foreach (var tag in Project.Tags)
+                    {
+                        <span class="project-detail-tag">@tag</span>
+                    }
+                </div>
+            }
+
+        </div>
+
+        <!-- ── GitHub repo panel ── -->
+        @if (!string.IsNullOrEmpty(Project.Repo))
+        {
+            <GitHubRepoPanel RepoUrl="@Project.Repo" />
+        }
+
+        <!-- ── Demo link / embed ── -->
+        @if (!string.IsNullOrEmpty(Project.DemoUrl))
+        {
+            <div class="project-detail-demo">
+                <p class="project-section-label">Demo</p>
+                @if (!string.IsNullOrEmpty(Project.DemoEmbed))
+                {
+                    <div class="project-demo-embed-wrap">
+                        <iframe src="@Project.DemoEmbed"
+                                class="project-demo-embed"
+                                loading="lazy"
+                                allow="autoplay; fullscreen"
+                                title="@Project.Title demo"
+                                sandbox="allow-scripts allow-same-origin allow-popups">
+                        </iframe>
+                    </div>
+                }
+                <a class="project-demo-link"
+                   href="@Project.DemoUrl"
+                   target="_blank"
+                   rel="noopener noreferrer">
+                    <MudIcon Icon="@Icons.Material.Filled.PlayCircle" Size="Size.Small" />
+                    Try it live
+                    <MudIcon Icon="@Icons.Material.Filled.OpenInNew"
+                             Size="Size.Small"
+                             Style="opacity:0.4" />
+                </a>
+            </div>
+        }
+
+        <!-- ── Dependencies ── -->
+        @if (Project.Dependencies.Count > 0)
+        {
+            <div class="project-detail-deps">
+                <p class="project-section-label">Dependencies</p>
+                <div class="project-deps-list">
+                    @foreach (var dep in Project.Dependencies)
+                    {
+                        <span class="project-dep-badge">@dep</span>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- ── Sub-page navigation ── -->
+        @if (Project.Subpages is { Count: > 0 })
+        {
+            <div class="project-subpages-nav">
+                <p class="project-subpages-nav-label">Pages</p>
+                <div class="project-subpages-list">
+                    @foreach (var sp in Project.Subpages)
+                    {
+                        var spSlug = sp;
+                        <a class="project-subpage-card"
+                           href="/programming/@Project.Slug/@spSlug">
+                            <MudIcon Icon="@Icons.Material.Filled.Article"
+                                     Size="Size.Small"
+                                     Class="project-subpage-card-icon" />
+                            <span>@GetSubPageDisplayTitle(spSlug)</span>
+                            <MudIcon Icon="@Icons.Material.Filled.ChevronRight"
+                                     Size="Size.Small"
+                                     Class="project-subpage-card-arrow" />
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- ── Gallery ── -->
+        @if (Project.Gallery is { Count: > 0 })
+        {
+            <div class="project-detail-gallery">
+                <p class="project-section-label">Gallery</p>
+                <Lightbox Items="@Project.Gallery" Slug="@Project.Slug" CdnUrlResolver="ProgrammingService.ResolveCdnUrl" />
+            </div>
+        }
+
+        <!-- ── Files ── -->
+        @if (Project.Files is { Count: > 0 })
+        {
+            <div class="project-detail-files">
+                <p class="project-section-label">Files</p>
+                <div class="project-detail-files-row">
+                    @foreach (var file in VisibleFiles(Project.Files))
+                    {
+                        <a class="project-detail-file-btn"
+                           href="@ProgrammingService.ResolveCdnUrl(Project.Slug, file.Src)"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           download>
+                            <MudIcon Icon="@Icons.Material.Filled.InsertDriveFile"
+                                     Size="Size.Small"
+                                     Class="project-detail-file-icon" />
+                            @file.Label
+                        </a>
+                    }
+                </div>
+                @if (Project.Files.Count > FilesInitialVisible)
+                {
+                    <button class="project-files-toggle"
+                            @onclick="@(() => _isFilesExpanded = !_isFilesExpanded)"
+                            aria-expanded="@_isFilesExpanded.ToString().ToLower()">
+                        @if (_isFilesExpanded)
+                        {
+                            <span>Show less</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="18 15 12 9 6 15"/>
+                            </svg>
+                        }
+                        else
+                        {
+                            <span>Show @(Project.Files.Count - FilesInitialVisible) more</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                        }
+                    </button>
+                }
+            </div>
+        }
+    }
+
+    <!-- Markdown body -->
+    @if (ProjectHtml is not null)
+    {
+        <div class="project-content-scope">
+            <div class="project-content">
+                @((MarkupString)ProjectHtml)
+            </div>
+        </div>
+    }
+
+    <!-- ── Credits ── -->
+    @if (Project?.Credits is { Count: > 0 })
+    {
+        <div class="project-detail-credits">
+            <p class="project-section-label">Credits</p>
+            <ul class="project-credits-list">
+                @foreach (var credit in Project.Credits)
+                {
+                    <li class="project-credit-item">
+                        <a class="project-credit-link"
+                           href="@credit.Url"
+                           target="_blank"
+                           rel="noopener noreferrer">@credit.Label</a>
+                        <span class="project-credit-by">by @credit.Author</span>
+                        @if (!string.IsNullOrEmpty(credit.License))
+                        {
+                            <span class="project-credit-license">@credit.License</span>
+                        }
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public bool IsLoading { get; set; }
+    [Parameter, EditorRequired] public bool HasError { get; set; }
+    [Parameter] public ProjectEntry? Project { get; set; }
+    [Parameter] public string? ProjectHtml { get; set; }
+    [Parameter] public IReadOnlyDictionary<string, string>? SubpageTitleCache { get; set; }
+    [Parameter] public EventCallback OnRetry { get; set; }
+
+    private const int FilesInitialVisible = 3;
+    private bool _isFilesExpanded = false;
+    private string? _lastProjectSlug;
+
+    protected override void OnParametersSet()
+    {
+        if (Project?.Slug != _lastProjectSlug)
+        {
+            _isFilesExpanded = false;
+            _lastProjectSlug = Project?.Slug;
+        }
+    }
+
+    private IEnumerable<FileItem> VisibleFiles(List<FileItem> files) =>
+        _isFilesExpanded ? files : files.Take(FilesInitialVisible);
+
+    private string GetSubPageDisplayTitle(string subpage) =>
+        SubpageTitleCache is not null && SubpageTitleCache.TryGetValue(subpage, out var title)
+            ? title
+            : MarkdownProcessor.TitleCaseFromSlug(subpage);
+
+    private static string FormatDate(string isoDate)
+    {
+        if (DateTime.TryParse(isoDate, out var dt))
+            return dt.ToString("d MMMM yyyy");
+        return isoDate;
+    }
+
+    private static string GetStatusCssClass(string status) =>
+        status.ToLowerInvariant() switch
+        {
+            "complete"    => "project-detail-status--complete",
+            "in-progress" => "project-detail-status--in-progress",
+            "wip"         => "project-detail-status--in-progress",
+            "abandoned"   => "project-detail-status--abandoned",
+            "archived"    => "project-detail-status--abandoned",
+            _             => "project-detail-status--default"
+        };
+
+    private static string GetStatusLabel(string status) =>
+        status.ToLowerInvariant() switch
+        {
+            "complete"    => "Complete",
+            "in-progress" => "In Progress",
+            "wip"         => "WIP",
+            "abandoned"   => "Abandoned",
+            "archived"    => "Archived",
+            _             => status
+        };
+}

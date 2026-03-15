@@ -1,0 +1,152 @@
+/* ══════════════════════════════════════════════
+   BuildsListView — scoped styles
+   ══════════════════════════════════════════════ */
+
+/* ── Loading / error states ── */
+
+.builds-loading {
+    display: flex;
+    justify-content: center;
+    padding: 80px 0;
+}
+
+.builds-error {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+/* ══════════════════════════════════════════════
+   Tag filter — multi-select autocomplete
+   ══════════════════════════════════════════════ */
+
+.builds-tag-filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 28px;
+}
+
+/* ── Active tag chips row ── */
+
+.builds-active-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 0;
+}
+
+.builds-active-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8rem;
+    padding: 4px 10px 4px 12px;
+    border-radius: 999px;
+    background: rgba(156, 194, 64, 0.15);
+    color: var(--color-lichen-flash);
+    border: 1px solid rgba(156, 194, 64, 0.38);
+}
+
+.builds-active-tag-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.6;
+    font-size: 0.72rem;
+    padding: 0 1px;
+    line-height: 1;
+    transition: opacity 0.12s ease;
+}
+
+.builds-active-tag-remove:hover {
+    opacity: 1;
+}
+
+.builds-filter-clear {
+    font-size: 0.75rem;
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    opacity: 0.5;
+    padding: 2px 6px;
+    text-decoration: underline;
+    transition: opacity 0.12s ease;
+}
+
+.builds-filter-clear:hover {
+    opacity: 1;
+}
+
+/* ── Search input + suggestions ── */
+
+.builds-tag-search-wrapper {
+    position: relative;
+    width: 260px;
+}
+
+.builds-tag-search {
+    width: 100%;
+    background: var(--color-tephra);
+    border: 1px solid var(--color-cinder);
+    border-radius: 8px;
+    color: var(--color-text-primary);
+    padding: 8px 14px;
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 0.15s ease;
+    box-sizing: border-box;
+}
+
+.builds-tag-search::placeholder {
+    color: var(--color-text-muted);
+    opacity: 0.45;
+}
+
+.builds-tag-search:focus {
+    border-color: rgba(156, 194, 64, 0.5);
+}
+
+.builds-tag-suggestions {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: var(--color-tephra);
+    border: 1px solid var(--color-cinder);
+    border-radius: 8px;
+    list-style: none;
+    margin: 0;
+    padding: 4px 0;
+    z-index: 200;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.builds-tag-suggestion {
+    padding: 8px 14px;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: background 0.1s ease, color 0.1s ease;
+}
+
+.builds-tag-suggestion:hover {
+    background: var(--color-cinder);
+    color: var(--color-text-primary);
+}
+
+/* Result count — shown only when tags are active */
+.builds-filter-count {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    opacity: 0.5;
+    margin: 0;
+    white-space: nowrap;
+}

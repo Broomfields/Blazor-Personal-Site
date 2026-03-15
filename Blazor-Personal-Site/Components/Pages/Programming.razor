@@ -2,8 +2,6 @@
 @page "/programming/{Slug}"
 @page "/programming/{Slug}/{Subpage}"
 
-@using Blazor_Personal_Site.Models
-@using Blazor_Personal_Site.Services
 @inject IProgrammingService ProgrammingService
 @inject NavigationManager Nav
 
@@ -19,112 +17,11 @@
             Utilities, toy games, and mods — software built out of curiosity and necessity.
         </MudText>
 
-        @if (_isLoadingManifest)
-        {
-            <div class="projects-loading">
-                <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
-            </div>
-        }
-        else if (_hasManifestError)
-        {
-            <div class="projects-error">
-                <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
-                    Hey, sorry — we couldn't fetch the projects right now. Please check back in a moment.
-                </MudAlert>
-                <MudButton Variant="Variant.Outlined"
-                           Color="Color.Primary"
-                           StartIcon="@Icons.Material.Filled.Refresh"
-                           OnClick="RetryManifestAsync">
-                    Retry
-                </MudButton>
-            </div>
-        }
-        else if (_manifest is null || _manifest.Projects.Count == 0)
-        {
-            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
-                No projects found. Check back soon!
-            </MudAlert>
-        }
-        else
-        {
-            <!-- ── Tag filter ── -->
-            @if (AllTags.Count > 0)
-            {
-                <div class="projects-tag-filter">
-
-                    <div class="projects-tag-search-wrapper">
-                        <input class="projects-tag-search"
-                               type="text"
-                               placeholder="Filter by tag…"
-                               value="@_tagQuery"
-                               @oninput="@(e => _tagQuery = e.Value?.ToString() ?? string.Empty)"
-                               @onfocus="@(() => _isShowingTagSuggestions = true)"
-                               @onblur="@(() => { if (!_isMouseOverSuggestions) _isShowingTagSuggestions = false; })"
-                               autocomplete="off"
-                               aria-label="Filter projects by tag" />
-                        @if (_isShowingTagSuggestions && TagSuggestions.Count > 0)
-                        {
-                            <ul class="projects-tag-suggestions" role="listbox"
-                                @onmouseenter="@(() => _isMouseOverSuggestions = true)"
-                                @onmouseleave="@(() => _isMouseOverSuggestions = false)">
-                                @foreach (var suggestion in TagSuggestions)
-                                {
-                                    var s = suggestion;
-                                    <li class="projects-tag-suggestion"
-                                        role="option"
-                                        @onmousedown:preventDefault="true"
-                                        @onclick="@(() => AddTag(s))">@s</li>
-                                }
-                            </ul>
-                        }
-                    </div>
-
-                    @if (_selectedTags.Count > 0)
-                    {
-                        <p class="projects-filter-count">@FilteredProjects.Count of @_manifest.Projects.Count projects</p>
-                    }
-
-                    @if (_selectedTags.Count > 0)
-                    {
-                        <div class="projects-active-tags">
-                            @foreach (var tag in _selectedTags.ToList())
-                            {
-                                var t = tag;
-                                <span class="projects-active-tag">
-                                    @t
-                                    <button class="projects-active-tag-remove"
-                                            @onclick="@(() => RemoveTag(t))"
-                                            aria-label="@($"Remove {t} filter")">&#x2715;</button>
-                                </span>
-                            }
-                            <button class="projects-filter-clear" @onclick="ClearTags">Clear all</button>
-                        </div>
-                    }
-
-                </div>
-            }
-
-            <!-- ── Project grid ── -->
-            @if (FilteredProjects.Count == 0)
-            {
-                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
-                    No projects match that tag.
-                </MudAlert>
-            }
-            else
-            {
-                <MudGrid Spacing="4">
-                    @foreach (var project in FilteredProjects)
-                    {
-                        <MudItem xs="12" sm="6" md="4">
-                            <ProjectCard Project="project"
-                                         CoverUrl="@ProgrammingService.ResolveCdnUrl(project.Slug, project.Cover)"
-                                         OnClick="@(() => Nav.NavigateTo($"/programming/{project.Slug}"))" />
-                        </MudItem>
-                    }
-                </MudGrid>
-            }
-        }
+        <ProgrammingListView IsLoading="_isLoadingManifest"
+                             HasError="_hasManifestError"
+                             Manifest="_manifest"
+                             OnRetry="RetryManifestAsync"
+                             OnProjectSelected="@(slug => Nav.NavigateTo($"/programming/{slug}"))" />
 
     </MudContainer>
 }
@@ -141,48 +38,13 @@ else if (Subpage is not null)
             @(_currentProject?.Title ?? "Project")
         </MudButton>
 
-        @if (_isLoadingSubpage)
-        {
-            <div class="projects-loading">
-                <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
-            </div>
-        }
-        else if (_hasSubpageError)
-        {
-            <div class="projects-error">
-                <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
-                    Hey, sorry — we couldn't load this page right now. Please try again in a moment.
-                </MudAlert>
-                <MudButton Variant="Variant.Outlined"
-                           Color="Color.Primary"
-                           StartIcon="@Icons.Material.Filled.Refresh"
-                           OnClick="RetrySubPageAsync">
-                    Retry
-                </MudButton>
-            </div>
-        }
-        else
-        {
-            <div class="project-detail-header">
-                <h1 class="project-detail-title">@(_subpageTitle ?? MarkdownProcessor.TitleCaseFromSlug(Subpage))</h1>
-                @if (_currentProject is not null)
-                {
-                    <div class="project-subpage-parent-label">
-                        <MudIcon Icon="@Icons.Material.Filled.Code" Size="Size.Small" />
-                        <span>@_currentProject.Title</span>
-                    </div>
-                }
-            </div>
-
-            @if (_subpageHtml is not null)
-            {
-                <div class="project-content-scope">
-                    <div class="project-content">
-                        @((MarkupString)_subpageHtml)
-                    </div>
-                </div>
-            }
-        }
+        <ProgrammingSubPageView IsLoading="_isLoadingSubpage"
+                                HasError="_hasSubpageError"
+                                SubpageSlug="@Subpage"
+                                Title="@_subpageTitle"
+                                Html="@_subpageHtml"
+                                ParentProject="_currentProject"
+                                OnRetry="RetrySubPageAsync" />
 
     </MudContainer>
 }
@@ -199,282 +61,12 @@ else
             All Projects
         </MudButton>
 
-        @if (_isLoadingProject)
-        {
-            <div class="projects-loading">
-                <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
-            </div>
-        }
-        else if (_hasProjectError)
-        {
-            <div class="projects-error">
-                <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
-                    Hey, sorry — we couldn't load this project right now. Please try again in a moment.
-                </MudAlert>
-                <MudButton Variant="Variant.Outlined"
-                           Color="Color.Primary"
-                           StartIcon="@Icons.Material.Filled.Refresh"
-                           OnClick="RetryProjectAsync">
-                    Retry
-                </MudButton>
-            </div>
-        }
-        else
-        {
-            @if (_currentProject is not null)
-            {
-                <div class="project-detail-header">
-
-                    <!-- Cover image -->
-                    @if (!string.IsNullOrEmpty(_currentProject.Cover))
-                    {
-                        <div class="project-detail-cover">
-                            <img src="@ProgrammingService.ResolveCdnUrl(_currentProject.Slug, _currentProject.Cover)"
-                                 alt="@(!string.IsNullOrEmpty(_currentProject.CoverAlt) ? _currentProject.CoverAlt : _currentProject.Title)"
-                                 loading="eager" />
-                        </div>
-                    }
-
-                    <!-- Title row -->
-                    <div class="project-detail-title-row">
-                        <h1 class="project-detail-title">@_currentProject.Title</h1>
-                        @if (_currentProject.Links is { Count: > 0 })
-                        {
-                            <div class="project-detail-links">
-                                <div class="project-detail-links-row">
-                                    @foreach (var link in _currentProject.Links)
-                                    {
-                                        <a class="project-detail-link-btn"
-                                           href="@link.Url"
-                                           target="_blank"
-                                           rel="noopener noreferrer">
-                                            @link.Label
-                                            <MudIcon Icon="@Icons.Material.Filled.OpenInNew"
-                                                     Size="Size.Small"
-                                                     Class="project-detail-link-icon" />
-                                        </a>
-                                    }
-                                </div>
-                            </div>
-                        }
-                    </div>
-
-                    <!-- Meta row: date, license, status -->
-                    <div class="project-detail-meta">
-                        @if (!string.IsNullOrEmpty(_currentProject.Date))
-                        {
-                            <span class="project-detail-meta-item">
-                                <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" />
-                                @FormatDate(_currentProject.Date)
-                            </span>
-                        }
-                        @if (!string.IsNullOrEmpty(_currentProject.License))
-                        {
-                            <span class="project-detail-meta-item">
-                                <MudIcon Icon="@Icons.Material.Filled.Copyright" Size="Size.Small" />
-                                @_currentProject.License
-                            </span>
-                        }
-                        @if (!string.IsNullOrEmpty(_currentProject.Status))
-                        {
-                            <span class="project-detail-status @GetStatusCssClass(_currentProject.Status)">
-                                @GetStatusLabel(_currentProject.Status)
-                            </span>
-                        }
-                    </div>
-
-                    <!-- Badges: languages + platform + tags on one row -->
-                    @{
-                        var hasAnyBadges = _currentProject.Languages.Count > 0
-                                        || _currentProject.Platform.Count > 0
-                                        || _currentProject.Tags.Count > 0;
-                    }
-                    @if (hasAnyBadges)
-                    {
-                        <div class="project-detail-badges">
-                            @foreach (var lang in _currentProject.Languages)
-                            {
-                                <span class="project-detail-lang-badge" style="@LanguageStyles.GetBadgeStyle(lang)">@lang</span>
-                            }
-                            @foreach (var plat in _currentProject.Platform)
-                            {
-                                <span class="project-platform-badge">@plat</span>
-                            }
-                            @foreach (var tag in _currentProject.Tags)
-                            {
-                                <span class="project-detail-tag">@tag</span>
-                            }
-                        </div>
-                    }
-
-                </div>
-
-                <!-- ── GitHub repo panel ── -->
-                @if (!string.IsNullOrEmpty(_currentProject.Repo))
-                {
-                    <GitHubRepoPanel RepoUrl="@_currentProject.Repo" />
-                }
-
-                <!-- ── Demo link / embed ── -->
-                @if (!string.IsNullOrEmpty(_currentProject.DemoUrl))
-                {
-                    <div class="project-detail-demo">
-                        <p class="project-section-label">Demo</p>
-                        @if (!string.IsNullOrEmpty(_currentProject.DemoEmbed))
-                        {
-                            <div class="project-demo-embed-wrap">
-                                <iframe src="@_currentProject.DemoEmbed"
-                                        class="project-demo-embed"
-                                        loading="lazy"
-                                        allow="autoplay; fullscreen"
-                                        title="@_currentProject.Title demo"
-                                        sandbox="allow-scripts allow-same-origin allow-popups">
-                                </iframe>
-                            </div>
-                        }
-                        <a class="project-demo-link"
-                           href="@_currentProject.DemoUrl"
-                           target="_blank"
-                           rel="noopener noreferrer">
-                            <MudIcon Icon="@Icons.Material.Filled.PlayCircle" Size="Size.Small" />
-                            Try it live
-                            <MudIcon Icon="@Icons.Material.Filled.OpenInNew"
-                                     Size="Size.Small"
-                                     Style="opacity:0.4" />
-                        </a>
-                    </div>
-                }
-
-                <!-- ── Dependencies ── -->
-                @if (_currentProject.Dependencies.Count > 0)
-                {
-                    <div class="project-detail-deps">
-                        <p class="project-section-label">Dependencies</p>
-                        <div class="project-deps-list">
-                            @foreach (var dep in _currentProject.Dependencies)
-                            {
-                                <span class="project-dep-badge">@dep</span>
-                            }
-                        </div>
-                    </div>
-                }
-
-                <!-- ── Sub-page navigation ── -->
-                @if (_currentProject.Subpages is { Count: > 0 })
-                {
-                    <div class="project-subpages-nav">
-                        <p class="project-subpages-nav-label">Pages</p>
-                        <div class="project-subpages-list">
-                            @foreach (var sp in _currentProject.Subpages)
-                            {
-                                var spSlug = sp;
-                                <a class="project-subpage-card"
-                                   href="/programming/@_currentProject.Slug/@spSlug">
-                                    <MudIcon Icon="@Icons.Material.Filled.Article"
-                                             Size="Size.Small"
-                                             Class="project-subpage-card-icon" />
-                                    <span>@GetSubPageDisplayTitle(spSlug)</span>
-                                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight"
-                                             Size="Size.Small"
-                                             Class="project-subpage-card-arrow" />
-                                </a>
-                            }
-                        </div>
-                    </div>
-                }
-
-                <!-- ── Gallery ── -->
-                @if (_currentProject.Gallery is { Count: > 0 })
-                {
-                    <div class="project-detail-gallery">
-                        <p class="project-section-label">Gallery</p>
-                        <ProjectLightbox Items="@_currentProject.Gallery" Slug="@_currentProject.Slug" />
-                    </div>
-                }
-
-                <!-- ── Files ── -->
-                @if (_currentProject.Files is { Count: > 0 })
-                {
-                    <div class="project-detail-files">
-                        <p class="project-section-label">Files</p>
-                        <div class="project-detail-files-row">
-                            @foreach (var file in VisibleFiles(_currentProject.Files))
-                            {
-                                <a class="project-detail-file-btn"
-                                   href="@ProgrammingService.ResolveCdnUrl(_currentProject.Slug, file.Src)"
-                                   target="_blank"
-                                   rel="noopener noreferrer"
-                                   download>
-                                    <MudIcon Icon="@Icons.Material.Filled.InsertDriveFile"
-                                             Size="Size.Small"
-                                             Class="project-detail-file-icon" />
-                                    @file.Label
-                                </a>
-                            }
-                        </div>
-                        @if (_currentProject.Files.Count > FilesInitialVisible)
-                        {
-                            <button class="project-files-toggle"
-                                    @onclick="@(() => _isFilesExpanded = !_isFilesExpanded)"
-                                    aria-expanded="@_isFilesExpanded.ToString().ToLower()">
-                                @if (_isFilesExpanded)
-                                {
-                                    <span>Show less</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="18 15 12 9 6 15"/>
-                                    </svg>
-                                }
-                                else
-                                {
-                                    <span>Show @(_currentProject.Files.Count - FilesInitialVisible) more</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
-                                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="6 9 12 15 18 9"/>
-                                    </svg>
-                                }
-                            </button>
-                        }
-                    </div>
-                }
-            }
-
-            <!-- Markdown body -->
-            @if (_projectHtml is not null)
-            {
-                <div class="project-content-scope">
-                    <div class="project-content">
-                        @((MarkupString)_projectHtml)
-                    </div>
-                </div>
-            }
-
-            <!-- ── Credits ── -->
-            @if (_currentProject?.Credits is { Count: > 0 })
-            {
-                <div class="project-detail-credits">
-                    <p class="project-section-label">Credits</p>
-                    <ul class="project-credits-list">
-                        @foreach (var credit in _currentProject.Credits)
-                        {
-                            <li class="project-credit-item">
-                                <a class="project-credit-link"
-                                   href="@credit.Url"
-                                   target="_blank"
-                                   rel="noopener noreferrer">@credit.Label</a>
-                                <span class="project-credit-by">by @credit.Author</span>
-                                @if (!string.IsNullOrEmpty(credit.License))
-                                {
-                                    <span class="project-credit-license">@credit.License</span>
-                                }
-                            </li>
-                        }
-                    </ul>
-                </div>
-            }
-        }
+        <ProgrammingDetailView IsLoading="_isLoadingProject"
+                               HasError="_hasProjectError"
+                               Project="_currentProject"
+                               ProjectHtml="@_projectHtml"
+                               SubpageTitleCache="_subpageTitleCache"
+                               OnRetry="RetryProjectAsync" />
 
     </MudContainer>
 }
@@ -501,19 +93,6 @@ else
 
     private readonly Dictionary<string, string> _subpageTitleCache = new();
 
-    private const int FilesInitialVisible = 3;
-    private bool _isFilesExpanded = false;
-
-    private IEnumerable<FileItem> VisibleFiles(List<FileItem> files) =>
-        _isFilesExpanded ? files : files.Take(FilesInitialVisible);
-
-    // ── Tag filter ────────────────────────────────────────────────────────────
-
-    private readonly HashSet<string> _selectedTags = new(StringComparer.OrdinalIgnoreCase);
-    private string _tagQuery             = string.Empty;
-    private bool   _isShowingTagSuggestions   = false;
-    private bool   _isMouseOverSuggestions = false;
-
     private ProjectEntry? _currentProject =>
         Slug is not null ? _manifest?.Projects.FirstOrDefault(p => p.Slug == Slug) : null;
 
@@ -532,37 +111,6 @@ else
             return _currentProject is not null
                 ? $"{_currentProject.Title} — Programming — Shaun Broomfield"
                 : "Programming — Shaun Broomfield";
-        }
-    }
-
-    private List<string> AllTags =>
-        _manifest?.Projects
-            .SelectMany(p => p.Tags)
-            .Distinct()
-            .OrderBy(t => t)
-            .ToList()
-        ?? new List<string>();
-
-    private List<string> TagSuggestions =>
-        AllTags
-            .Where(t => !_selectedTags.Contains(t)
-                     && (string.IsNullOrWhiteSpace(_tagQuery)
-                         || t.Contains(_tagQuery, StringComparison.OrdinalIgnoreCase)))
-            .ToList();
-
-    private List<ProjectEntry> FilteredProjects
-    {
-        get
-        {
-            if (_manifest is null) return new List<ProjectEntry>();
-
-            var source = _selectedTags.Count == 0
-                ? _manifest.Projects
-                : _manifest.Projects.Where(p => _selectedTags.All(t => p.Tags.Contains(t)));
-
-            return source
-                .OrderByDescending(p => p.IsFeatured)
-                .ToList();
         }
     }
 
@@ -591,10 +139,10 @@ else
 
         if (Slug is null)
         {
-            _projectHtml  = null;
+            _projectHtml     = null;
             _hasProjectError = false;
-            _subpageHtml  = null;
-            _subpageTitle = null;
+            _subpageHtml     = null;
+            _subpageTitle    = null;
             _hasSubpageError = false;
         }
         else if (Subpage is not null)
@@ -603,10 +151,9 @@ else
         }
         else
         {
-            _subpageHtml   = null;
-            _subpageTitle  = null;
-            _hasSubpageError  = false;
-            _isFilesExpanded = false;
+            _subpageHtml     = null;
+            _subpageTitle    = null;
+            _hasSubpageError = false;
             await LoadProjectAsync();
         }
     }
@@ -656,7 +203,7 @@ else
     {
         _isLoadingProject = true;
         _hasProjectError   = false;
-        _projectHtml    = null;
+        _projectHtml       = null;
 
         var html = await ProgrammingService.FetchProjectHtmlAsync(Slug!);
 
@@ -672,8 +219,8 @@ else
     {
         _isLoadingSubpage = true;
         _hasSubpageError   = false;
-        _subpageHtml    = null;
-        _subpageTitle   = null;
+        _subpageHtml       = null;
+        _subpageTitle      = null;
 
         var htmlTask  = ProgrammingService.FetchSubPageHtmlAsync(Slug!, Subpage!);
         var titleTask = ProgrammingService.FetchSubPageTitleAsync(Slug!, Subpage!);
@@ -707,59 +254,4 @@ else
     {
         if (Slug is not null && Subpage is not null) await LoadSubPageAsync();
     }
-
-    // ── Tag filter actions ────────────────────────────────────────────────────
-
-    private void AddTag(string tag)
-    {
-        _selectedTags.Add(tag);
-        _tagQuery             = string.Empty;
-        _isShowingTagSuggestions   = false;
-        _isMouseOverSuggestions = false;
-    }
-
-    private void RemoveTag(string tag) => _selectedTags.Remove(tag);
-
-    private void ClearTags()
-    {
-        _selectedTags.Clear();
-        _tagQuery = string.Empty;
-    }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    private string GetSubPageDisplayTitle(string subpage) =>
-        _subpageTitleCache.TryGetValue(subpage, out var title)
-            ? title
-            : MarkdownProcessor.TitleCaseFromSlug(subpage);
-
-    private static string FormatDate(string isoDate)
-    {
-        if (DateTime.TryParse(isoDate, out var dt))
-            return dt.ToString("d MMMM yyyy");
-        return isoDate;
-    }
-
-    private static string GetStatusCssClass(string status) =>
-        status.ToLowerInvariant() switch
-        {
-            "complete"    => "project-detail-status--complete",
-            "in-progress" => "project-detail-status--in-progress",
-            "wip"         => "project-detail-status--in-progress",
-            "abandoned"   => "project-detail-status--abandoned",
-            "archived"    => "project-detail-status--abandoned",
-            _             => "project-detail-status--default"
-        };
-
-    private static string GetStatusLabel(string status) =>
-        status.ToLowerInvariant() switch
-        {
-            "complete"    => "Complete",
-            "in-progress" => "In Progress",
-            "wip"         => "WIP",
-            "abandoned"   => "Abandoned",
-            "archived"    => "Archived",
-            _             => status
-        };
-
 }

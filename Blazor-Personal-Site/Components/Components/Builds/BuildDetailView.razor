@@ -1,0 +1,286 @@
+@inject IBuildsService BuildsService
+
+@if (IsLoading)
+{
+    <div class="builds-loading">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+    </div>
+}
+else if (HasError)
+{
+    <div class="builds-error">
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
+            Hey, sorry — we couldn't load this build right now. Please try again in a moment.
+        </MudAlert>
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Refresh"
+                   OnClick="OnRetry">
+            Retry
+        </MudButton>
+    </div>
+}
+else
+{
+    <!-- Build header (uses manifest data so it renders even before the markdown arrives) -->
+    @if (Build is not null)
+    {
+        <div class="build-detail-header">
+
+            @if (!string.IsNullOrEmpty(Build.Cover))
+            {
+                <div class="build-detail-cover">
+                    <img src="@BuildsService.ResolveCdnUrl(Build.Slug, Build.Cover)"
+                         alt="@(!string.IsNullOrEmpty(Build.CoverAlt) ? Build.CoverAlt : Build.Title)"
+                         loading="eager" />
+                </div>
+            }
+
+            <div class="build-detail-title-row">
+                <h1 class="build-detail-title">@Build.Title</h1>
+                @if (Build.Links is { Count: > 0 })
+                {
+                    <div class="build-detail-links">
+                        <div class="build-detail-links-row">
+                            @foreach (var link in Build.Links)
+                            {
+                                <a class="build-detail-link-btn"
+                                   href="@link.Url"
+                                   target="_blank"
+                                   rel="noopener noreferrer">
+                                    @link.Label
+                                    <MudIcon Icon="@Icons.Material.Filled.OpenInNew"
+                                             Size="Size.Small"
+                                             Class="build-detail-link-icon" />
+                                </a>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="build-detail-meta">
+                @if (!string.IsNullOrEmpty(Build.Date))
+                {
+                    <span class="build-detail-meta-item">
+                        <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" />
+                        @FormatDate(Build.Date)
+                    </span>
+                }
+                @if (!string.IsNullOrEmpty(Build.CadTool))
+                {
+                    <span class="build-detail-meta-item">
+                        <MudIcon Icon="@Icons.Material.Filled.DesignServices" Size="Size.Small" />
+                        @Build.CadTool
+                    </span>
+                }
+                @if (!string.IsNullOrEmpty(Build.License))
+                {
+                    <span class="build-detail-meta-item">
+                        <MudIcon Icon="@Icons.Material.Filled.Copyright" Size="Size.Small" />
+                        @Build.License
+                    </span>
+                }
+                @if (!string.IsNullOrEmpty(Build.Status))
+                {
+                    <span class="build-detail-status @GetStatusCssClass(Build.Status)">
+                        @GetStatusLabel(Build.Status)
+                    </span>
+                }
+            </div>
+
+            @if (Build.Tags.Count > 0)
+            {
+                <div class="build-detail-tags">
+                    @foreach (var tag in Build.Tags)
+                    {
+                        <span class="build-detail-tag">@tag</span>
+                    }
+                </div>
+            }
+
+        </div>
+
+        <!-- ── Sub-page navigation (only when sub-pages exist) ── -->
+        @if (Build.Subpages is { Count: > 0 })
+        {
+            <div class="build-subpages-nav">
+                <p class="build-subpages-nav-label">Pages</p>
+                <div class="build-subpages-list">
+                    @foreach (var sp in Build.Subpages)
+                    {
+                        var spSlug = sp;
+                        <a class="build-subpage-card"
+                           href="/builds/@Build.Slug/@spSlug">
+                            <MudIcon Icon="@Icons.Material.Filled.Article"
+                                     Size="Size.Small"
+                                     Class="build-subpage-card-icon" />
+                            <span>@GetSubPageDisplayTitle(spSlug)</span>
+                            <MudIcon Icon="@Icons.Material.Filled.ChevronRight"
+                                     Size="Size.Small"
+                                     Class="build-subpage-card-arrow" />
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- ── Gallery (manifest images, Blazor lightbox) ── -->
+        @if (Build.Gallery is { Count: > 0 })
+        {
+            <div class="build-detail-gallery">
+                <p class="build-section-label">Gallery</p>
+                <Lightbox Items="@Build.Gallery" Slug="@Build.Slug" CdnUrlResolver="BuildsService.ResolveCdnUrl" />
+            </div>
+        }
+
+        <!-- ── Files (downloadable assets) ── -->
+        @if (Build.Files is { Count: > 0 })
+        {
+            <div class="build-detail-files">
+                <p class="build-section-label">Files</p>
+                <div class="build-detail-files-row">
+                    @foreach (var file in VisibleFiles(Build.Files))
+                    {
+                        <a class="build-detail-file-btn"
+                           href="@BuildsService.ResolveCdnUrl(Build.Slug, file.Src)"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           download>
+                            <MudIcon Icon="@Icons.Material.Filled.InsertDriveFile"
+                                     Size="Size.Small"
+                                     Class="build-detail-file-icon" />
+                            @file.Label
+                        </a>
+                    }
+                </div>
+                @if (Build.Files.Count > FilesInitialVisible)
+                {
+                    <button class="build-files-toggle"
+                            @onclick="@(() => _isFilesExpanded = !_isFilesExpanded)"
+                            aria-expanded="@_isFilesExpanded.ToString().ToLower()">
+                        @if (_isFilesExpanded)
+                        {
+                            <span>Show less</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="18 15 12 9 6 15"/>
+                            </svg>
+                        }
+                        else
+                        {
+                            <span>Show @(Build.Files.Count - FilesInitialVisible) more</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                        }
+                    </button>
+                }
+            </div>
+        }
+    }
+
+    <!-- Markdown body.
+         .build-content-scope is a scope-anchor: it gives the ::deep
+         CSS selector an [b-xxxx]-attributed ancestor above
+         .build-content so that scoped rules like
+         ::deep .build-content img actually match. -->
+    @if (BuildHtml is not null)
+    {
+        <div class="build-content-scope">
+            <div class="build-content">
+                @((MarkupString)BuildHtml)
+            </div>
+        </div>
+    }
+
+    <!-- ── Credits (third-party assets used in this build) ── -->
+    @if (Build?.Credits is { Count: > 0 })
+    {
+        <div class="build-detail-credits">
+            <p class="build-section-label">Credits</p>
+            <ul class="build-credits-list">
+                @foreach (var credit in Build.Credits)
+                {
+                    <li class="build-credit-item">
+                        <a class="build-credit-link"
+                           href="@credit.Url"
+                           target="_blank"
+                           rel="noopener noreferrer">@credit.Label</a>
+                        <span class="build-credit-by">by @credit.Author</span>
+                        @if (!string.IsNullOrEmpty(credit.License))
+                        {
+                            <span class="build-credit-license">@credit.License</span>
+                        }
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public bool IsLoading { get; set; }
+    [Parameter, EditorRequired] public bool HasError { get; set; }
+    [Parameter] public BuildEntry? Build { get; set; }
+    [Parameter] public string? BuildHtml { get; set; }
+    [Parameter] public IReadOnlyDictionary<string, string>? SubpageTitleCache { get; set; }
+    [Parameter] public EventCallback OnRetry { get; set; }
+
+    private const int FilesInitialVisible = 3;
+    private bool _isFilesExpanded = false;
+    private string? _lastBuildSlug;
+
+    protected override void OnParametersSet()
+    {
+        if (Build?.Slug != _lastBuildSlug)
+        {
+            _isFilesExpanded = false;
+            _lastBuildSlug = Build?.Slug;
+        }
+    }
+
+    private IEnumerable<FileItem> VisibleFiles(List<FileItem> files) =>
+        _isFilesExpanded ? files : files.Take(FilesInitialVisible);
+
+    /// <summary>
+    /// Returns a display title for a sub-page stem. Uses the cached title from
+    /// frontmatter if already fetched; otherwise formats the slug as a fallback.
+    /// </summary>
+    private string GetSubPageDisplayTitle(string subpage) =>
+        SubpageTitleCache is not null && SubpageTitleCache.TryGetValue(subpage, out var title)
+            ? title
+            : MarkdownProcessor.TitleCaseFromSlug(subpage);
+
+    private static string FormatDate(string isoDate)
+    {
+        if (DateTime.TryParse(isoDate, out var dt))
+            return dt.ToString("d MMMM yyyy");
+        return isoDate;
+    }
+
+    private static string GetStatusCssClass(string status) =>
+        status.ToLowerInvariant() switch
+        {
+            "complete"    => "build-detail-status--complete",
+            "in-progress" => "build-detail-status--in-progress",
+            "wip"         => "build-detail-status--in-progress",
+            "abandoned"   => "build-detail-status--abandoned",
+            "archived"    => "build-detail-status--abandoned",
+            _             => "build-detail-status--default"
+        };
+
+    private static string GetStatusLabel(string status) =>
+        status.ToLowerInvariant() switch
+        {
+            "complete"    => "Complete",
+            "in-progress" => "In Progress",
+            "wip"         => "WIP",
+            "abandoned"   => "Abandoned",
+            "archived"    => "Archived",
+            _             => status
+        };
+}

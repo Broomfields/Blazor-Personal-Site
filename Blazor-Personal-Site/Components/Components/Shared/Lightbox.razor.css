@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════
-   BuildLightbox — Gallery thumbnails
+   Lightbox — Gallery thumbnails + overlay
    ══════════════════════════════════════════════ */
 
 .blb-gallery {
@@ -100,7 +100,7 @@
 }
 
 /* ══════════════════════════════════════════════
-   BuildLightbox — Lightbox overlay
+   Lightbox overlay
    ══════════════════════════════════════════════ */
 
 .blb-overlay {

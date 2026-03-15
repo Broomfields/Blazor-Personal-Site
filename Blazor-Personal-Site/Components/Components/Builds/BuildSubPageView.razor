@@ -1,0 +1,54 @@
+@if (IsLoading)
+{
+    <div class="builds-loading">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+    </div>
+}
+else if (HasError)
+{
+    <div class="builds-error">
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
+            Hey, sorry — we couldn't load this page right now. Please try again in a moment.
+        </MudAlert>
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Refresh"
+                   OnClick="OnRetry">
+            Retry
+        </MudButton>
+    </div>
+}
+else
+{
+    <!-- Sub-page header -->
+    <div class="build-detail-header">
+        <h1 class="build-detail-title">@(Title ?? MarkdownProcessor.TitleCaseFromSlug(SubpageSlug ?? string.Empty))</h1>
+        @if (ParentBuild is not null)
+        {
+            <div class="build-subpage-parent-label">
+                <MudIcon Icon="@Icons.Material.Filled.Build" Size="Size.Small" />
+                <span>@ParentBuild.Title</span>
+            </div>
+        }
+    </div>
+
+    <!-- Markdown body -->
+    @if (Html is not null)
+    {
+        <div class="build-content-scope">
+            <div class="build-content">
+                @((MarkupString)Html)
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public bool IsLoading { get; set; }
+    [Parameter, EditorRequired] public bool HasError { get; set; }
+    [Parameter] public string? SubpageSlug { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Html { get; set; }
+    [Parameter] public BuildEntry? ParentBuild { get; set; }
+    [Parameter] public EventCallback OnRetry { get; set; }
+}

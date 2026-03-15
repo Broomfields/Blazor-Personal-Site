@@ -1,6 +1,5 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
-@inject IBuildsService BuildsService
 
 @if (Items is { Count: > 0 })
 {
@@ -83,26 +82,28 @@
 }
 
 @code {
-    /// <summary>Gallery items sourced from the build manifest.</summary>
+    /// <summary>Gallery items to display.</summary>
     [Parameter, EditorRequired] public List<GalleryItem> Items { get; set; } = default!;
 
-    /// <summary>The build slug, used to resolve CDN URLs for each image.</summary>
+    /// <summary>The content slug, used as the first argument to <see cref="CdnUrlResolver"/>.</summary>
     [Parameter, EditorRequired] public string Slug { get; set; } = default!;
 
-    // ── Collapse state ────────────────────────────────────────────────────────
-
     /// <summary>
-    /// Number of items shown in the collapsed state (one full grid row at 3 columns).
+    /// CDN URL resolver for this content type. Pass the service method directly,
+    /// e.g. <c>CdnUrlResolver="BuildsService.ResolveCdnUrl"</c>.
+    /// Signature: (slug, relativePath) => absoluteUrl
     /// </summary>
-    private const int InitialVisible = 3;
+    [Parameter, EditorRequired] public Func<string, string, string> CdnUrlResolver { get; set; } = default!;
 
+    // ── Collapse state ─────────────────────────────────────────────────────────
+
+    private const int InitialVisible = 3;
     private bool _isExpanded = false;
 
-    /// <summary>The subset of items currently rendered in the grid.</summary>
     private IEnumerable<GalleryItem> VisibleItems =>
         _isExpanded ? Items : Items.Take(InitialVisible);
 
-    // ── Lightbox state ────────────────────────────────────────────────────────
+    // ── Lightbox state ─────────────────────────────────────────────────────────
 
     private bool             _isOpen    = false;
     private string           _activeSrc = string.Empty;
@@ -111,12 +112,9 @@
 
     private string CdnUrl(string relativePath)
     {
-        // Gallery src values may be bare filenames (e.g. "02-model-cap.jpeg") when the
-        // manifest hasn't fully resolved paths. All gallery images live under the build's
-        // images/ subfolder, so prepend it when no directory separator is present.
         if (!relativePath.Contains('/'))
             relativePath = $"images/{relativePath}";
-        return BuildsService.ResolveCdnUrl(Slug, relativePath);
+        return CdnUrlResolver(Slug, relativePath);
     }
 
     private async Task OpenAsync(GalleryItem item)
@@ -125,15 +123,12 @@
         _activeAlt = item.Label;
         _isOpen    = true;
         StateHasChanged();
-        // Focus the overlay so Escape key handling works immediately;
-        // also locks body scroll while the lightbox is visible.
         await JS.InvokeVoidAsync("blbOpen", _overlayRef);
     }
 
     private async Task CloseAsync()
     {
         _isOpen = false;
-        // Restore body scroll.
         await JS.InvokeVoidAsync("blbClose");
     }
 
@@ -144,8 +139,6 @@
 
     public async ValueTask DisposeAsync()
     {
-        // Restore scroll if the component is torn down while the lightbox is open
-        // (e.g. user navigates away via the back button).
         if (_isOpen)
             await JS.InvokeVoidAsync("blbClose");
     }

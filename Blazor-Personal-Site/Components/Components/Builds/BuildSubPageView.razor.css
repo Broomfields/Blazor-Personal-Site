@@ -1,0 +1,196 @@
+/* ══════════════════════════════════════════════
+   BuildSubPageView — scoped styles
+   ══════════════════════════════════════════════ */
+
+/* ── Loading / error states ── */
+
+.builds-loading {
+    display: flex;
+    justify-content: center;
+    padding: 80px 0;
+}
+
+.builds-error {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+/* ── Header block ── */
+
+.build-detail-header {
+    margin-bottom: 40px;
+}
+
+.build-detail-title {
+    margin: 0;
+    flex: 1;
+    min-width: 0;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--color-text-primary);
+    line-height: 1.2;
+}
+
+/* ── Sub-page parent label ── */
+
+.build-subpage-parent-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    opacity: 0.7;
+    margin-top: 6px;
+}
+
+/* ══════════════════════════════════════════════
+   Build detail — rendered markdown body
+   Uses ::deep so styles reach inside @((MarkupString)...)
+   ══════════════════════════════════════════════ */
+
+.build-content {
+    color: var(--color-text-primary);
+    line-height: 1.8;
+    font-size: 1rem;
+}
+
+::deep .build-content h1,
+::deep .build-content h2,
+::deep .build-content h3,
+::deep .build-content h4,
+::deep .build-content h5,
+::deep .build-content h6 {
+    color: var(--color-text-primary);
+    font-weight: 600;
+    line-height: 1.3;
+    margin-top: 2em;
+    margin-bottom: 0.6em;
+}
+
+::deep .build-content h1 { font-size: 1.75rem; }
+::deep .build-content h2 { font-size: 1.4rem; border-bottom: 1px solid var(--color-cinder); padding-bottom: 0.3em; }
+::deep .build-content h3 { font-size: 1.15rem; }
+::deep .build-content h4 { font-size: 1rem; }
+
+::deep .build-content p {
+    margin: 0 0 1.1em;
+    opacity: 0.87;
+}
+
+::deep .build-content .build-img-wrap {
+    display: block;
+    position: relative;
+    width: fit-content;
+    max-width: 100%;
+    margin: 24px auto;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 3px 14px rgba(0, 0, 0, 0.45);
+    max-height: 260px;
+    line-height: 0;
+}
+
+::deep .build-content .build-img-wrap img {
+    display: block;
+    max-height: 260px;
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    border-radius: 8px;
+}
+
+::deep .build-content .build-img-hint {
+    display: none;
+}
+
+::deep .build-content a {
+    color: var(--color-lichen-flash);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.15s ease;
+}
+
+::deep .build-content a:hover {
+    border-bottom-color: var(--color-lichen-flash);
+}
+
+::deep .build-content code {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.875em;
+    color: var(--color-lichen-flash);
+    font-family: 'Courier New', Courier, monospace;
+}
+
+::deep .build-content pre {
+    background: var(--color-ash-plain);
+    border: 1px solid var(--color-cinder);
+    padding: 18px 20px;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin: 1.2em 0;
+}
+
+::deep .build-content pre code {
+    background: none;
+    padding: 0;
+    color: var(--color-text-primary);
+    font-size: 0.875rem;
+}
+
+::deep .build-content ul,
+::deep .build-content ol {
+    padding-left: 1.6em;
+    margin: 0 0 1em;
+}
+
+::deep .build-content li {
+    margin: 0.3em 0;
+    opacity: 0.87;
+}
+
+::deep .build-content blockquote {
+    border-left: 3px solid var(--color-highland-green);
+    margin: 1.2em 0;
+    padding: 0.5em 1.2em;
+    background: rgba(94, 122, 42, 0.07);
+    border-radius: 0 8px 8px 0;
+}
+
+::deep .build-content blockquote p {
+    margin: 0;
+}
+
+::deep .build-content hr {
+    border: none;
+    border-top: 1px solid var(--color-cinder);
+    margin: 2.5em 0;
+}
+
+::deep .build-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.2em 0;
+    font-size: 0.9rem;
+}
+
+::deep .build-content th,
+::deep .build-content td {
+    border: 1px solid var(--color-cinder);
+    padding: 10px 14px;
+    text-align: left;
+}
+
+::deep .build-content th {
+    background: var(--color-tephra);
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+::deep .build-content td {
+    opacity: 0.87;
+}

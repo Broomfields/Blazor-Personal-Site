@@ -1,0 +1,168 @@
+@inject IProgrammingService ProgrammingService
+
+@if (IsLoading)
+{
+    <div class="projects-loading">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+    </div>
+}
+else if (HasError)
+{
+    <div class="projects-error">
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
+            Hey, sorry — we couldn't fetch the projects right now. Please check back in a moment.
+        </MudAlert>
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Refresh"
+                   OnClick="OnRetry">
+            Retry
+        </MudButton>
+    </div>
+}
+else if (Manifest is null || Manifest.Projects.Count == 0)
+{
+    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+        No projects found. Check back soon!
+    </MudAlert>
+}
+else
+{
+    <!-- ── Tag filter ── -->
+    @if (AllTags.Count > 0)
+    {
+        <div class="projects-tag-filter">
+
+            <div class="projects-tag-search-wrapper">
+                <input class="projects-tag-search"
+                       type="text"
+                       placeholder="Filter by tag…"
+                       value="@_tagQuery"
+                       @oninput="@(e => _tagQuery = e.Value?.ToString() ?? string.Empty)"
+                       @onfocus="@(() => _isShowingTagSuggestions = true)"
+                       @onblur="@(() => { if (!_isMouseOverSuggestions) _isShowingTagSuggestions = false; })"
+                       autocomplete="off"
+                       aria-label="Filter projects by tag" />
+                @if (_isShowingTagSuggestions && TagSuggestions.Count > 0)
+                {
+                    <ul class="projects-tag-suggestions" role="listbox"
+                        @onmouseenter="@(() => _isMouseOverSuggestions = true)"
+                        @onmouseleave="@(() => _isMouseOverSuggestions = false)">
+                        @foreach (var suggestion in TagSuggestions)
+                        {
+                            var s = suggestion;
+                            <li class="projects-tag-suggestion"
+                                role="option"
+                                @onmousedown:preventDefault="true"
+                                @onclick="@(() => AddTag(s))">@s</li>
+                        }
+                    </ul>
+                }
+            </div>
+
+            @if (_selectedTags.Count > 0)
+            {
+                <p class="projects-filter-count">@FilteredProjects.Count of @Manifest.Projects.Count projects</p>
+            }
+
+            @if (_selectedTags.Count > 0)
+            {
+                <div class="projects-active-tags">
+                    @foreach (var tag in _selectedTags.ToList())
+                    {
+                        var t = tag;
+                        <span class="projects-active-tag">
+                            @t
+                            <button class="projects-active-tag-remove"
+                                    @onclick="@(() => RemoveTag(t))"
+                                    aria-label="@($"Remove {t} filter")">&#x2715;</button>
+                        </span>
+                    }
+                    <button class="projects-filter-clear" @onclick="ClearTags">Clear all</button>
+                </div>
+            }
+
+        </div>
+    }
+
+    <!-- ── Project grid ── -->
+    @if (FilteredProjects.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+            No projects match that tag.
+        </MudAlert>
+    }
+    else
+    {
+        <MudGrid Spacing="4">
+            @foreach (var project in FilteredProjects)
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <ProjectCard Project="project"
+                                 CoverUrl="@ProgrammingService.ResolveCdnUrl(project.Slug, project.Cover)"
+                                 OnClick="@(() => OnProjectSelected.InvokeAsync(project.Slug))" />
+                </MudItem>
+            }
+        </MudGrid>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public bool IsLoading { get; set; }
+    [Parameter, EditorRequired] public bool HasError { get; set; }
+    [Parameter] public ProjectManifest? Manifest { get; set; }
+    [Parameter] public EventCallback OnRetry { get; set; }
+    [Parameter] public EventCallback<string> OnProjectSelected { get; set; }
+
+    private readonly HashSet<string> _selectedTags = new(StringComparer.OrdinalIgnoreCase);
+    private string _tagQuery             = string.Empty;
+    private bool   _isShowingTagSuggestions   = false;
+    private bool   _isMouseOverSuggestions = false;
+
+    private List<string> AllTags =>
+        Manifest?.Projects
+            .SelectMany(p => p.Tags)
+            .Distinct()
+            .OrderBy(t => t)
+            .ToList()
+        ?? new List<string>();
+
+    private List<string> TagSuggestions =>
+        AllTags
+            .Where(t => !_selectedTags.Contains(t)
+                     && (string.IsNullOrWhiteSpace(_tagQuery)
+                         || t.Contains(_tagQuery, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+
+    private List<ProjectEntry> FilteredProjects
+    {
+        get
+        {
+            if (Manifest is null) return new List<ProjectEntry>();
+
+            var source = _selectedTags.Count == 0
+                ? Manifest.Projects
+                : Manifest.Projects.Where(p => _selectedTags.All(t => p.Tags.Contains(t)));
+
+            return source
+                .OrderByDescending(p => p.IsFeatured)
+                .ToList();
+        }
+    }
+
+    private void AddTag(string tag)
+    {
+        _selectedTags.Add(tag);
+        _tagQuery             = string.Empty;
+        _isShowingTagSuggestions   = false;
+        _isMouseOverSuggestions = false;
+    }
+
+    private void RemoveTag(string tag) => _selectedTags.Remove(tag);
+
+    private void ClearTags()
+    {
+        _selectedTags.Clear();
+        _tagQuery = string.Empty;
+    }
+}

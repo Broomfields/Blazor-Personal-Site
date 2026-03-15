@@ -1,0 +1,181 @@
+@inject IBuildsService BuildsService
+
+@if (IsLoading)
+{
+    <div class="builds-loading">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+    </div>
+}
+else if (HasError)
+{
+    <div class="builds-error">
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
+            Hey, sorry — we couldn't fetch the builds right now. Please check back in a moment.
+        </MudAlert>
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Refresh"
+                   OnClick="OnRetry">
+            Retry
+        </MudButton>
+    </div>
+}
+else if (Manifest is null || Manifest.Builds.Count == 0)
+{
+    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+        No builds found. Check back soon!
+    </MudAlert>
+}
+else
+{
+    <!-- ── Tag filter (multi-select autocomplete) ── -->
+    @if (AllTags.Count > 0)
+    {
+        <div class="builds-tag-filter">
+
+            <!-- Search input + suggestions dropdown -->
+            <div class="builds-tag-search-wrapper">
+                <input class="builds-tag-search"
+                       type="text"
+                       placeholder="Filter by tag…"
+                       value="@_tagQuery"
+                       @oninput="@(e => _tagQuery = e.Value?.ToString() ?? string.Empty)"
+                       @onfocus="@(() => _isShowingTagSuggestions = true)"
+                       @onblur="@(() => { if (!_isMouseOverSuggestions) _isShowingTagSuggestions = false; })"
+                       autocomplete="off"
+                       aria-label="Filter builds by tag" />
+                @if (_isShowingTagSuggestions && TagSuggestions.Count > 0)
+                {
+                    <ul class="builds-tag-suggestions" role="listbox"
+                        @onmouseenter="@(() => _isMouseOverSuggestions = true)"
+                        @onmouseleave="@(() => _isMouseOverSuggestions = false)">
+                        @foreach (var suggestion in TagSuggestions)
+                        {
+                            var s = suggestion;
+                            <li class="builds-tag-suggestion"
+                                role="option"
+                                @onmousedown:preventDefault="true"
+                                @onclick="@(() => AddTag(s))">@s</li>
+                        }
+                    </ul>
+                }
+            </div>
+
+            <!-- Result count when a filter is active -->
+            @if (_selectedTags.Count > 0)
+            {
+                <p class="builds-filter-count">@FilteredBuilds.Count of @Manifest.Builds.Count builds</p>
+            }
+
+            <!-- Active tag chips -->
+            @if (_selectedTags.Count > 0)
+            {
+                <div class="builds-active-tags">
+                    @foreach (var tag in _selectedTags.ToList())
+                    {
+                        var t = tag;
+                        <span class="builds-active-tag">
+                            @t
+                            <button class="builds-active-tag-remove"
+                                    @onclick="@(() => RemoveTag(t))"
+                                    aria-label="@($"Remove {t} filter")">&#x2715;</button>
+                        </span>
+                    }
+                    <button class="builds-filter-clear" @onclick="ClearTags">Clear all</button>
+                </div>
+            }
+
+        </div>
+    }
+
+    <!-- ── Build grid ── -->
+    @if (FilteredBuilds.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+            No builds match that tag.
+        </MudAlert>
+    }
+    else
+    {
+        <MudGrid Spacing="4">
+            @foreach (var build in FilteredBuilds)
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <BuildCard Build="build"
+                               CoverUrl="@BuildsService.ResolveCdnUrl(build.Slug, build.Cover)"
+                               OnClick="@(() => OnBuildSelected.InvokeAsync(build.Slug))" />
+                </MudItem>
+            }
+        </MudGrid>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public bool IsLoading { get; set; }
+    [Parameter, EditorRequired] public bool HasError { get; set; }
+    [Parameter] public BuildManifest? Manifest { get; set; }
+    [Parameter] public EventCallback OnRetry { get; set; }
+    [Parameter] public EventCallback<string> OnBuildSelected { get; set; }
+
+    private readonly HashSet<string> _selectedTags = new(StringComparer.OrdinalIgnoreCase);
+    private string _tagQuery             = string.Empty;
+    private bool   _isShowingTagSuggestions   = false;
+    // Prevents @onblur from hiding the suggestions while the mouse is over
+    // the list — necessary because Blazor Server's SignalR round-trip makes
+    // @onmousedown:preventDefault arrive too late to stop the browser's
+    // native focus-shift, so blur fires before the click registers.
+    private bool   _isMouseOverSuggestions = false;
+
+    // All distinct tags across every build, sorted alphabetically
+    private List<string> AllTags =>
+        Manifest?.Builds
+            .SelectMany(b => b.Tags)
+            .Distinct()
+            .OrderBy(t => t)
+            .ToList()
+        ?? new List<string>();
+
+    // Tags shown in the autocomplete dropdown:
+    // not already selected, matching the current search query (if any)
+    private List<string> TagSuggestions =>
+        AllTags
+            .Where(t => !_selectedTags.Contains(t)
+                     && (string.IsNullOrWhiteSpace(_tagQuery)
+                         || t.Contains(_tagQuery, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+
+    // Builds visible in the grid — filtered by active tags, then sorted so
+    // featured builds always appear first (stable sort preserves manifest order
+    // within each group).
+    private List<BuildEntry> FilteredBuilds
+    {
+        get
+        {
+            if (Manifest is null) return new List<BuildEntry>();
+
+            var source = _selectedTags.Count == 0
+                ? Manifest.Builds
+                : Manifest.Builds.Where(b => _selectedTags.All(t => b.Tags.Contains(t)));
+
+            return source
+                .OrderByDescending(b => b.IsFeatured)
+                .ToList();
+        }
+    }
+
+    private void AddTag(string tag)
+    {
+        _selectedTags.Add(tag);
+        _tagQuery             = string.Empty;
+        _isShowingTagSuggestions   = false;
+        _isMouseOverSuggestions = false;
+    }
+
+    private void RemoveTag(string tag) => _selectedTags.Remove(tag);
+
+    private void ClearTags()
+    {
+        _selectedTags.Clear();
+        _tagQuery = string.Empty;
+    }
+}
