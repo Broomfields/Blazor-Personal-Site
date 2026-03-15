@@ -212,8 +212,7 @@
         if (_programmingManifest is null) return;
 
         var tasks = _programmingManifest.Projects
-            .Where(p => p.Subpages is { Count: > 0 })
-            .SelectMany(p => p.Subpages!.Select(sp => LoadProgrammingSubPageTitleAsync(p.Slug, sp)))
+            .SelectMany(p => (p.Subpages ?? []).Select(sp => LoadProgrammingSubPageTitleAsync(p.Slug, sp)))
             .ToList();
 
         await Task.WhenAll(tasks);
