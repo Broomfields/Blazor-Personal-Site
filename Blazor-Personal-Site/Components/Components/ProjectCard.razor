@@ -1,6 +1,6 @@
 @using Blazor_Personal_Site.Models
 
-<div class="project-card @(Project.Featured ? "project-card--featured" : "")"
+<div class="project-card @(Project.IsFeatured ? "project-card--featured" : "")"
      @onclick="OnClick" role="button" tabindex="0"
      @onkeydown="HandleKeyDown"
      aria-label="@($"View project: {Project.Title}")">
@@ -29,7 +29,7 @@
             {
                 <span class="project-card-badge @statusClass">@statusLabel</span>
             }
-            @if (Project.Featured)
+            @if (Project.IsFeatured)
             {
                 <span class="project-card-featured-star" title="Featured project" aria-label="Featured project">
                     <MudIcon Icon="@Icons.Material.Filled.Star" Size="Size.Small" />

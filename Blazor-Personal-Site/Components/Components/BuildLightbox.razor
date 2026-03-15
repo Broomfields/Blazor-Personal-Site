@@ -8,12 +8,12 @@
     <div class="blb-gallery">
         @foreach (var item in VisibleItems)
         {
-            var i = item;
+            var galleryItem = item;
             <button class="blb-thumb"
-                    @onclick="@(() => OpenAsync(i))"
-                    aria-label="@($"Open image: {i.Label}")">
-                <img src="@CdnUrl(i.Src)"
-                     alt="@i.Label"
+                    @onclick="@(() => OpenAsync(galleryItem))"
+                    aria-label="@($"Open image: {galleryItem.Label}")">
+                <img src="@CdnUrl(galleryItem.Src)"
+                     alt="@galleryItem.Label"
                      loading="lazy" />
                 <span class="blb-thumb-hint" aria-hidden="true">
                     <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28"
@@ -32,9 +32,9 @@
     <!-- ── Expand / collapse toggle (only when there are hidden items) ── -->
     @if (Items.Count > InitialVisible)
     {
-        <button class="blb-gallery-toggle" @onclick="@(() => _expanded = !_expanded)"
-                aria-expanded="@_expanded.ToString().ToLower()">
-            @if (_expanded)
+        <button class="blb-gallery-toggle" @onclick="@(() => _isExpanded = !_isExpanded)"
+                aria-expanded="@_isExpanded.ToString().ToLower()">
+            @if (_isExpanded)
             {
                 <span>Show less</span>
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
@@ -96,11 +96,11 @@
     /// </summary>
     private const int InitialVisible = 3;
 
-    private bool _expanded = false;
+    private bool _isExpanded = false;
 
     /// <summary>The subset of items currently rendered in the grid.</summary>
     private IEnumerable<GalleryItem> VisibleItems =>
-        _expanded ? Items : Items.Take(InitialVisible);
+        _isExpanded ? Items : Items.Take(InitialVisible);
 
     // ── Lightbox state ────────────────────────────────────────────────────────
 

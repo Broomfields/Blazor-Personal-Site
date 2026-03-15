@@ -60,7 +60,7 @@ public class BuildEntry
     /// absent entries deserialise to the default <c>false</c>.
     /// </summary>
     [JsonPropertyName("featured")]
-    public bool Featured { get; set; }
+    public bool IsFeatured { get; set; }
 
     /// <summary>
     /// SPDX or Creative Commons license identifier for the design

@@ -6,7 +6,7 @@
 {
     <div class="gh-panel">
 
-        @if (_loading)
+        @if (_isLoading)
         {
             <div class="gh-panel-loading">
                 <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="width:16px;height:16px;" />
@@ -143,18 +143,18 @@
     private bool _hasRepo => !string.IsNullOrWhiteSpace(RepoUrl);
 
     private GitHubRepoStats? _stats;
-    private bool _loading = true;
+    private bool _isLoading = true;
     private string? _pushedDisplay;
 
     protected override async Task OnParametersSetAsync()
     {
         if (!_hasRepo) return;
 
-        _loading = true;
+        _isLoading = true;
         _stats   = null;
 
         _stats   = await GitHubService.FetchRepoStatsAsync(RepoUrl);
-        _loading = false;
+        _isLoading = false;
 
         if (_stats?.PushedAt is not null &&
             DateTime.TryParse(_stats.PushedAt, null,

@@ -18,12 +18,12 @@
             <MudNavLink Href="programming" Match="NavLinkMatch.All"
                         Icon="@Icons.Material.Filled.Code"
                         Style="padding-right: 40px;">Programming</MudNavLink>
-            <MudIconButton Icon="@(_programmingExpanded ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
-                           OnClick="@(() => _programmingExpanded = !_programmingExpanded)"
+            <MudIconButton Icon="@(_isProgrammingExpanded ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
+                           OnClick="@(() => _isProgrammingExpanded = !_isProgrammingExpanded)"
                            Size="Size.Small"
                            Style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); z-index: 1;" />
         </div>
-        <MudCollapse Expanded="_programmingExpanded">
+        <MudCollapse Expanded="_isProgrammingExpanded">
             <div class="pl-4">
                 @foreach (var project in _programmingManifest.Projects)
                 {
@@ -69,12 +69,12 @@
             <MudNavLink Href="builds" Match="NavLinkMatch.All"
                         Icon="@Icons.Material.Filled.Build"
                         Style="padding-right: 40px;">Builds</MudNavLink>
-            <MudIconButton Icon="@(_buildsExpanded ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
-                           OnClick="@(() => _buildsExpanded = !_buildsExpanded)"
+            <MudIconButton Icon="@(_isBuildsExpanded ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
+                           OnClick="@(() => _isBuildsExpanded = !_isBuildsExpanded)"
                            Size="Size.Small"
                            Style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); z-index: 1;" />
         </div>
-        <MudCollapse Expanded="_buildsExpanded">
+        <MudCollapse Expanded="_isBuildsExpanded">
             <div class="pl-4">
                 @foreach (var build in _buildsManifest.Builds)
                 {
@@ -125,14 +125,14 @@
     // ── Builds state ──────────────────────────────────────────────────────────
 
     private BuildManifest? _buildsManifest;
-    private bool _buildsExpanded;
+    private bool _isBuildsExpanded;
     private readonly Dictionary<string, bool> _buildGroupExpanded = new();
     private readonly Dictionary<string, string> _buildSubpageTitles = new();
 
     // ── Programming state ─────────────────────────────────────────────────────
 
     private ProjectManifest? _programmingManifest;
-    private bool _programmingExpanded;
+    private bool _isProgrammingExpanded;
     private readonly Dictionary<string, bool> _programmingGroupExpanded = new();
     private readonly Dictionary<string, string> _programmingSubpageTitles = new();
 
@@ -248,8 +248,8 @@
         var uri  = new Uri(url);
         var path = uri.AbsolutePath.TrimStart('/');
 
-        _buildsExpanded      = path.StartsWith("builds",      StringComparison.OrdinalIgnoreCase);
-        _programmingExpanded = path.StartsWith("programming", StringComparison.OrdinalIgnoreCase);
+        _isBuildsExpanded      = path.StartsWith("builds",      StringComparison.OrdinalIgnoreCase);
+        _isProgrammingExpanded = path.StartsWith("programming", StringComparison.OrdinalIgnoreCase);
 
         if (_buildsManifest is not null)
         {

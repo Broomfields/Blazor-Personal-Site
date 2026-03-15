@@ -1,6 +1,6 @@
 @using Blazor_Personal_Site.Models
 
-<div class="build-card @(Build.Featured ? "build-card--featured" : "")"
+<div class="build-card @(Build.IsFeatured ? "build-card--featured" : "")"
      @onclick="OnClick" role="button" tabindex="0"
      @onkeydown="HandleKeyDown"
      aria-label="@($"View build: {Build.Title}")">
@@ -33,7 +33,7 @@
             {
                 <span class="build-card-badge @statusClass">@statusLabel</span>
             }
-            @if (Build.Featured)
+            @if (Build.IsFeatured)
             {
                 <span class="build-card-featured-star" title="Featured build" aria-label="Featured build">
                     <MudIcon Icon="@Icons.Material.Filled.Star" Size="Size.Small" />

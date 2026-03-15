@@ -40,7 +40,7 @@ public class ProjectEntry
     /// When <c>true</c> the project should be pinned / highlighted in the UI.
     /// </summary>
     [JsonPropertyName("featured")]
-    public bool Featured { get; set; }
+    public bool IsFeatured { get; set; }
 
     [JsonPropertyName("tags")]
     public List<string> Tags { get; set; } = new();

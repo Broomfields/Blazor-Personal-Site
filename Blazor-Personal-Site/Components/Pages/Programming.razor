@@ -19,13 +19,13 @@
             Utilities, toy games, and mods — software built out of curiosity and necessity.
         </MudText>
 
-        @if (_loadingManifest)
+        @if (_isLoadingManifest)
         {
             <div class="projects-loading">
                 <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
             </div>
         }
-        else if (_manifestError)
+        else if (_hasManifestError)
         {
             <div class="projects-error">
                 <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
@@ -58,15 +58,15 @@
                                placeholder="Filter by tag…"
                                value="@_tagQuery"
                                @oninput="@(e => _tagQuery = e.Value?.ToString() ?? string.Empty)"
-                               @onfocus="@(() => _showTagSuggestions = true)"
-                               @onblur="@(() => { if (!_mouseOverSuggestions) _showTagSuggestions = false; })"
+                               @onfocus="@(() => _isShowingTagSuggestions = true)"
+                               @onblur="@(() => { if (!_isMouseOverSuggestions) _isShowingTagSuggestions = false; })"
                                autocomplete="off"
                                aria-label="Filter projects by tag" />
-                        @if (_showTagSuggestions && TagSuggestions.Count > 0)
+                        @if (_isShowingTagSuggestions && TagSuggestions.Count > 0)
                         {
                             <ul class="projects-tag-suggestions" role="listbox"
-                                @onmouseenter="@(() => _mouseOverSuggestions = true)"
-                                @onmouseleave="@(() => _mouseOverSuggestions = false)">
+                                @onmouseenter="@(() => _isMouseOverSuggestions = true)"
+                                @onmouseleave="@(() => _isMouseOverSuggestions = false)">
                                 @foreach (var suggestion in TagSuggestions)
                                 {
                                     var s = suggestion;
@@ -141,13 +141,13 @@ else if (Subpage is not null)
             @(_currentProject?.Title ?? "Project")
         </MudButton>
 
-        @if (_loadingSubpage)
+        @if (_isLoadingSubpage)
         {
             <div class="projects-loading">
                 <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
             </div>
         }
-        else if (_subpageError)
+        else if (_hasSubpageError)
         {
             <div class="projects-error">
                 <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
@@ -199,13 +199,13 @@ else
             All Projects
         </MudButton>
 
-        @if (_loadingProject)
+        @if (_isLoadingProject)
         {
             <div class="projects-loading">
                 <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
             </div>
         }
-        else if (_projectError)
+        else if (_hasProjectError)
         {
             <div class="projects-error">
                 <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
@@ -415,9 +415,9 @@ else
                         @if (_currentProject.Files.Count > FilesInitialVisible)
                         {
                             <button class="project-files-toggle"
-                                    @onclick="@(() => _filesExpanded = !_filesExpanded)"
-                                    aria-expanded="@_filesExpanded.ToString().ToLower()">
-                                @if (_filesExpanded)
+                                    @onclick="@(() => _isFilesExpanded = !_isFilesExpanded)"
+                                    aria-expanded="@_isFilesExpanded.ToString().ToLower()">
+                                @if (_isFilesExpanded)
                                 {
                                     <span>Show less</span>
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
@@ -484,17 +484,17 @@ else
     [Parameter] public string? Subpage { get; set; }
 
     private ProjectManifest? _manifest;
-    private bool _loadingManifest = true;
-    private bool _manifestError   = false;
+    private bool _isLoadingManifest = true;
+    private bool _hasManifestError   = false;
 
     private string? _projectHtml;
-    private bool _loadingProject = false;
-    private bool _projectError   = false;
+    private bool _isLoadingProject = false;
+    private bool _hasProjectError   = false;
 
     private string? _subpageHtml;
     private string? _subpageTitle;
-    private bool _loadingSubpage = false;
-    private bool _subpageError   = false;
+    private bool _isLoadingSubpage = false;
+    private bool _hasSubpageError   = false;
 
     private string _loadedKey = "##NOT_INITIALIZED##";
     private string CurrentKey => $"{Slug}|{Subpage}";
@@ -502,17 +502,17 @@ else
     private readonly Dictionary<string, string> _subpageTitleCache = new();
 
     private const int FilesInitialVisible = 3;
-    private bool _filesExpanded = false;
+    private bool _isFilesExpanded = false;
 
     private IEnumerable<FileItem> VisibleFiles(List<FileItem> files) =>
-        _filesExpanded ? files : files.Take(FilesInitialVisible);
+        _isFilesExpanded ? files : files.Take(FilesInitialVisible);
 
     // ── Tag filter ────────────────────────────────────────────────────────────
 
     private readonly HashSet<string> _selectedTags = new(StringComparer.OrdinalIgnoreCase);
     private string _tagQuery             = string.Empty;
-    private bool   _showTagSuggestions   = false;
-    private bool   _mouseOverSuggestions = false;
+    private bool   _isShowingTagSuggestions   = false;
+    private bool   _isMouseOverSuggestions = false;
 
     private ProjectEntry? _currentProject =>
         Slug is not null ? _manifest?.Projects.FirstOrDefault(p => p.Slug == Slug) : null;
@@ -561,7 +561,7 @@ else
                 : _manifest.Projects.Where(p => _selectedTags.All(t => p.Tags.Contains(t)));
 
             return source
-                .OrderByDescending(p => p.Featured)
+                .OrderByDescending(p => p.IsFeatured)
                 .ToList();
         }
     }
@@ -592,10 +592,10 @@ else
         if (Slug is null)
         {
             _projectHtml  = null;
-            _projectError = false;
+            _hasProjectError = false;
             _subpageHtml  = null;
             _subpageTitle = null;
-            _subpageError = false;
+            _hasSubpageError = false;
         }
         else if (Subpage is not null)
         {
@@ -605,8 +605,8 @@ else
         {
             _subpageHtml   = null;
             _subpageTitle  = null;
-            _subpageError  = false;
-            _filesExpanded = false;
+            _hasSubpageError  = false;
+            _isFilesExpanded = false;
             await LoadProjectAsync();
         }
     }
@@ -615,18 +615,18 @@ else
 
     private async Task LoadManifestAsync()
     {
-        _loadingManifest = true;
-        _manifestError   = false;
+        _isLoadingManifest = true;
+        _hasManifestError   = false;
 
-        var result = await ProgrammingService.FetchManifestAsync();
+        var manifest = await ProgrammingService.FetchManifestAsync();
 
-        _loadingManifest = false;
+        _isLoadingManifest = false;
 
-        if (result is null)
-            _manifestError = true;
+        if (manifest is null)
+            _hasManifestError = true;
         else
         {
-            _manifest = result;
+            _manifest = manifest;
             _ = WarmSubPageTitlesAsync();
         }
     }
@@ -654,24 +654,24 @@ else
 
     private async Task LoadProjectAsync()
     {
-        _loadingProject = true;
-        _projectError   = false;
+        _isLoadingProject = true;
+        _hasProjectError   = false;
         _projectHtml    = null;
 
         var html = await ProgrammingService.FetchProjectHtmlAsync(Slug!);
 
-        _loadingProject = false;
+        _isLoadingProject = false;
 
         if (html is null)
-            _projectError = true;
+            _hasProjectError = true;
         else
             _projectHtml = html;
     }
 
     private async Task LoadSubPageAsync()
     {
-        _loadingSubpage = true;
-        _subpageError   = false;
+        _isLoadingSubpage = true;
+        _hasSubpageError   = false;
         _subpageHtml    = null;
         _subpageTitle   = null;
 
@@ -683,10 +683,10 @@ else
         var html  = htmlTask.Result;
         var title = titleTask.Result;
 
-        _loadingSubpage = false;
+        _isLoadingSubpage = false;
 
         if (html is null)
-            _subpageError = true;
+            _hasSubpageError = true;
         else
         {
             _subpageHtml  = html;
@@ -714,8 +714,8 @@ else
     {
         _selectedTags.Add(tag);
         _tagQuery             = string.Empty;
-        _showTagSuggestions   = false;
-        _mouseOverSuggestions = false;
+        _isShowingTagSuggestions   = false;
+        _isMouseOverSuggestions = false;
     }
 
     private void RemoveTag(string tag) => _selectedTags.Remove(tag);

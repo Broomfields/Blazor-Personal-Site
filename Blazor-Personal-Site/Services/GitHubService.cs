@@ -85,24 +85,24 @@ public class GitHubService : IGitHubService
             using var doc  = JsonDocument.Parse(response);
             var root = doc.RootElement;
 
-            var topics = new List<string>();
-            if (root.TryGetProperty("topics", out var topicsEl) &&
-                topicsEl.ValueKind == JsonValueKind.Array)
+            var topicList = new List<string>();
+            if (root.TryGetProperty("topics", out var topics) &&
+                topics.ValueKind == JsonValueKind.Array)
             {
-                foreach (var t in topicsEl.EnumerateArray())
+                foreach (var topic in topics.EnumerateArray())
                 {
-                    var v = t.GetString();
-                    if (!string.IsNullOrEmpty(v)) topics.Add(v);
+                    var topicName = topic.GetString();
+                    if (!string.IsNullOrEmpty(topicName)) topicList.Add(topicName);
                 }
             }
 
             return new GitHubRepoStats
             {
-                Stars      = root.TryGetProperty("stargazers_count",  out var s)  ? s.GetInt32()  : 0,
-                Forks      = root.TryGetProperty("forks_count",       out var f)  ? f.GetInt32()  : 0,
-                OpenIssues = root.TryGetProperty("open_issues_count", out var oi) ? oi.GetInt32() : 0,
-                PushedAt   = root.TryGetProperty("pushed_at",         out var p)  ? p.GetString() : null,
-                Topics     = topics,
+                Stars      = root.TryGetProperty("stargazers_count",  out var stars)      ? stars.GetInt32()      : 0,
+                Forks      = root.TryGetProperty("forks_count",       out var forks)      ? forks.GetInt32()      : 0,
+                OpenIssues = root.TryGetProperty("open_issues_count", out var openIssues) ? openIssues.GetInt32() : 0,
+                PushedAt   = root.TryGetProperty("pushed_at",         out var pushedAt)   ? pushedAt.GetString()  : null,
+                Topics     = topicList,
             };
         }
         catch (Exception ex)
@@ -121,13 +121,13 @@ public class GitHubService : IGitHubService
                 $"https://api.github.com/repos/{key}/languages", ct);
 
             using var doc = JsonDocument.Parse(response);
-            var result    = new Dictionary<string, long>();
+            var languageBytes = new Dictionary<string, long>();
 
             foreach (var prop in doc.RootElement.EnumerateObject())
-                result[prop.Name] = prop.Value.GetInt64();
+                languageBytes[prop.Name] = prop.Value.GetInt64();
 
             // Sort descending by bytes so the largest language comes first.
-            return result
+            return languageBytes
                 .OrderByDescending(kv => kv.Value)
                 .ToDictionary(kv => kv.Key, kv => kv.Value);
         }
@@ -147,37 +147,37 @@ public class GitHubService : IGitHubService
                 $"https://api.github.com/repos/{key}/commits?per_page=5", ct);
 
             using var doc = JsonDocument.Parse(response);
-            var result    = new List<GitHubCommit>();
+            var commitList = new List<GitHubCommit>();
 
             foreach (var item in doc.RootElement.EnumerateArray())
             {
-                if (!item.TryGetProperty("commit", out var c)) continue;
+                if (!item.TryGetProperty("commit", out var commit)) continue;
 
                 // Take only the subject line (first line of the message).
-                var fullMsg   = c.TryGetProperty("message", out var m) ? m.GetString() ?? "" : "";
+                var fullMsg   = commit.TryGetProperty("message", out var message) ? message.GetString() ?? "" : "";
                 var firstLine = fullMsg.Split('\n', StringSplitOptions.RemoveEmptyEntries)
                                        .FirstOrDefault() ?? "";
 
-                var author = string.Empty;
-                var date   = DateTime.MinValue;
+                var authorName = string.Empty;
+                var commitDate = DateTime.MinValue;
 
-                if (c.TryGetProperty("author", out var a))
+                if (commit.TryGetProperty("author", out var author))
                 {
-                    author = a.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "";
-                    if (a.TryGetProperty("date", out var d) && d.GetString() is string ds)
-                        DateTime.TryParse(ds, null,
-                            System.Globalization.DateTimeStyles.RoundtripKind, out date);
+                    authorName = author.TryGetProperty("name", out var name) ? name.GetString() ?? "" : "";
+                    if (author.TryGetProperty("date", out var date) && date.GetString() is string dateString)
+                        DateTime.TryParse(dateString, null,
+                            System.Globalization.DateTimeStyles.RoundtripKind, out commitDate);
                 }
 
-                result.Add(new GitHubCommit
+                commitList.Add(new GitHubCommit
                 {
                     Message = firstLine,
-                    Author  = author,
-                    Date    = date,
+                    Author  = authorName,
+                    Date    = commitDate,
                 });
             }
 
-            return result;
+            return commitList;
         }
         catch (Exception ex)
         {

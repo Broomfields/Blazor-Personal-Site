@@ -19,13 +19,13 @@
             3D-printed projects from practical desk organisers to structural engineering parts.
         </MudText>
 
-        @if (_loadingManifest)
+        @if (_isLoadingManifest)
         {
             <div class="builds-loading">
                 <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
             </div>
         }
-        else if (_manifestError)
+        else if (_hasManifestError)
         {
             <div class="builds-error">
                 <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
@@ -59,15 +59,15 @@
                                placeholder="Filter by tag…"
                                value="@_tagQuery"
                                @oninput="@(e => _tagQuery = e.Value?.ToString() ?? string.Empty)"
-                               @onfocus="@(() => _showTagSuggestions = true)"
-                               @onblur="@(() => { if (!_mouseOverSuggestions) _showTagSuggestions = false; })"
+                               @onfocus="@(() => _isShowingTagSuggestions = true)"
+                               @onblur="@(() => { if (!_isMouseOverSuggestions) _isShowingTagSuggestions = false; })"
                                autocomplete="off"
                                aria-label="Filter builds by tag" />
-                        @if (_showTagSuggestions && TagSuggestions.Count > 0)
+                        @if (_isShowingTagSuggestions && TagSuggestions.Count > 0)
                         {
                             <ul class="builds-tag-suggestions" role="listbox"
-                                @onmouseenter="@(() => _mouseOverSuggestions = true)"
-                                @onmouseleave="@(() => _mouseOverSuggestions = false)">
+                                @onmouseenter="@(() => _isMouseOverSuggestions = true)"
+                                @onmouseleave="@(() => _isMouseOverSuggestions = false)">
                                 @foreach (var suggestion in TagSuggestions)
                                 {
                                     var s = suggestion;
@@ -144,13 +144,13 @@ else if (Subpage is not null)
             @(_currentBuild?.Title ?? "Build")
         </MudButton>
 
-        @if (_loadingSubpage)
+        @if (_isLoadingSubpage)
         {
             <div class="builds-loading">
                 <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
             </div>
         }
-        else if (_subpageError)
+        else if (_hasSubpageError)
         {
             <div class="builds-error">
                 <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
@@ -204,13 +204,13 @@ else
             All Builds
         </MudButton>
 
-        @if (_loadingBuild)
+        @if (_isLoadingBuild)
         {
             <div class="builds-loading">
                 <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
             </div>
         }
-        else if (_buildError)
+        else if (_hasBuildError)
         {
             <div class="builds-error">
                 <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-4">
@@ -361,9 +361,9 @@ else
                         @if (_currentBuild.Files.Count > FilesInitialVisible)
                         {
                             <button class="build-files-toggle"
-                                    @onclick="@(() => _filesExpanded = !_filesExpanded)"
-                                    aria-expanded="@_filesExpanded.ToString().ToLower()">
-                                @if (_filesExpanded)
+                                    @onclick="@(() => _isFilesExpanded = !_isFilesExpanded)"
+                                    aria-expanded="@_isFilesExpanded.ToString().ToLower()">
+                                @if (_isFilesExpanded)
                                 {
                                     <span>Show less</span>
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
@@ -434,17 +434,17 @@ else
     [Parameter] public string? Subpage { get; set; }
 
     private BuildManifest? _manifest;
-    private bool _loadingManifest = true;
-    private bool _manifestError   = false;
+    private bool _isLoadingManifest = true;
+    private bool _hasManifestError   = false;
 
     private string? _buildHtml;
-    private bool _loadingBuild = false;
-    private bool _buildError   = false;
+    private bool _isLoadingBuild = false;
+    private bool _hasBuildError   = false;
 
     private string? _subpageHtml;
     private string? _subpageTitle;
-    private bool _loadingSubpage = false;
-    private bool _subpageError   = false;
+    private bool _isLoadingSubpage = false;
+    private bool _hasSubpageError   = false;
 
     // Tracks the combined (Slug, Subpage) key we've already loaded to avoid
     // redundant fetches on parameter-change cycles.
@@ -458,21 +458,21 @@ else
     // ── Files expand / collapse state ────────────────────────────────────────
 
     private const int FilesInitialVisible = 3;
-    private bool _filesExpanded = false;
+    private bool _isFilesExpanded = false;
 
     private IEnumerable<FileItem> VisibleFiles(List<FileItem> files) =>
-        _filesExpanded ? files : files.Take(FilesInitialVisible);
+        _isFilesExpanded ? files : files.Take(FilesInitialVisible);
 
     // ── Tag filter state ──────────────────────────────────────────────────────
     // Multi-select: zero or more active tags, OR-combined.
     private readonly HashSet<string> _selectedTags = new(StringComparer.OrdinalIgnoreCase);
     private string _tagQuery             = string.Empty;
-    private bool   _showTagSuggestions   = false;
+    private bool   _isShowingTagSuggestions   = false;
     // Prevents @onblur from hiding the suggestions while the mouse is over
     // the list — necessary because Blazor Server's SignalR round-trip makes
     // @onmousedown:preventDefault arrive too late to stop the browser's
     // native focus-shift, so blur fires before the click registers.
-    private bool   _mouseOverSuggestions = false;
+    private bool   _isMouseOverSuggestions = false;
 
     private BuildEntry? _currentBuild =>
         Slug is not null ? _manifest?.Builds.FirstOrDefault(b => b.Slug == Slug) : null;
@@ -527,7 +527,7 @@ else
                 : _manifest.Builds.Where(b => _selectedTags.All(t => b.Tags.Contains(t)));
 
             return source
-                .OrderByDescending(b => b.Featured)
+                .OrderByDescending(b => b.IsFeatured)
                 .ToList();
         }
     }
@@ -561,10 +561,10 @@ else
         {
             // Navigated back to the list — clear build/subpage state
             _buildHtml    = null;
-            _buildError   = false;
+            _hasBuildError   = false;
             _subpageHtml  = null;
             _subpageTitle = null;
-            _subpageError = false;
+            _hasSubpageError = false;
         }
         else if (Subpage is not null)
         {
@@ -575,8 +575,8 @@ else
             // Navigated to a build detail — clear any lingering sub-page state
             _subpageHtml  = null;
             _subpageTitle = null;
-            _subpageError = false;
-            _filesExpanded = false;
+            _hasSubpageError = false;
+            _isFilesExpanded = false;
             await LoadBuildAsync();
         }
     }
@@ -585,18 +585,18 @@ else
 
     private async Task LoadManifestAsync()
     {
-        _loadingManifest = true;
-        _manifestError   = false;
+        _isLoadingManifest = true;
+        _hasManifestError   = false;
 
-        var result = await BuildsService.FetchManifestAsync();
+        var manifest = await BuildsService.FetchManifestAsync();
 
-        _loadingManifest = false;
+        _isLoadingManifest = false;
 
-        if (result is null)
-            _manifestError = true;
+        if (manifest is null)
+            _hasManifestError = true;
         else
         {
-            _manifest = result;
+            _manifest = manifest;
             // Eagerly warm sub-page titles in the background so nav cards
             // can show proper names without a visible delay.
             _ = WarmSubPageTitlesAsync();
@@ -626,24 +626,24 @@ else
 
     private async Task LoadBuildAsync()
     {
-        _loadingBuild = true;
-        _buildError   = false;
+        _isLoadingBuild = true;
+        _hasBuildError   = false;
         _buildHtml    = null;
 
         var html = await BuildsService.FetchBuildHtmlAsync(Slug!);
 
-        _loadingBuild = false;
+        _isLoadingBuild = false;
 
         if (html is null)
-            _buildError = true;
+            _hasBuildError = true;
         else
             _buildHtml = html;
     }
 
     private async Task LoadSubPageAsync()
     {
-        _loadingSubpage = true;
-        _subpageError   = false;
+        _isLoadingSubpage = true;
+        _hasSubpageError   = false;
         _subpageHtml    = null;
         _subpageTitle   = null;
 
@@ -655,10 +655,10 @@ else
         var html  = htmlTask.Result;
         var title = titleTask.Result;
 
-        _loadingSubpage = false;
+        _isLoadingSubpage = false;
 
         if (html is null)
-            _subpageError = true;
+            _hasSubpageError = true;
         else
         {
             _subpageHtml  = html;
@@ -689,8 +689,8 @@ else
     {
         _selectedTags.Add(tag);
         _tagQuery             = string.Empty;
-        _showTagSuggestions   = false;
-        _mouseOverSuggestions = false;
+        _isShowingTagSuggestions   = false;
+        _isMouseOverSuggestions = false;
     }
 
     private void RemoveTag(string tag) => _selectedTags.Remove(tag);
