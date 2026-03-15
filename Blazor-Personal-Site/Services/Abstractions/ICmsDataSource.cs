@@ -1,4 +1,4 @@
-namespace Blazor_Personal_Site.Services;
+namespace Blazor_Personal_Site.Services.Abstractions;
 
 /// <summary>
 /// Abstracts the transport layer for CMS data — how the raw manifest JSON and

@@ -1,7 +1,6 @@
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using Blazor_Personal_Site.Models;
-using Markdig;
+using Blazor_Personal_Site.Services.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Blazor_Personal_Site.Services;
@@ -17,9 +16,6 @@ public class ProgrammingService
 {
     private static readonly JsonSerializerOptions JsonOptions =
         new() { PropertyNameCaseInsensitive = true };
-
-    private static readonly MarkdownPipeline MarkdownPipeline =
-        new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
 
     private readonly ICmsDataSource _dataSource;
     private readonly ILogger<ProgrammingService> _logger;
@@ -159,108 +155,19 @@ public class ProgrammingService
         var raw = await _dataSource.FetchMarkdownAsync(slug, $"{subpage}.md");
         if (raw is null) return null;
 
-        var title = ExtractFrontMatterTitle(raw) ?? TitleCaseFromSlug(subpage);
+        var title = MarkdownProcessor.ExtractFrontMatterTitle(raw) ?? MarkdownProcessor.TitleCaseFromSlug(subpage);
         _subpageTitleCache[cacheKey] = (title, DateTime.UtcNow);
         return title;
     }
 
     // ── Markdown processing pipeline ──────────────────────────────────────────
 
-    private string ProcessMarkdown(string raw, string slug, bool rewriteLinks)
-    {
-        var body = StripFrontMatter(raw);
-        body = RewriteRelativeImages(body, slug);
-        var html = Markdown.ToHtml(body, MarkdownPipeline);
-        html = WrapImages(html);
-        if (rewriteLinks)
-            html = RewriteRelativeLinks(html, slug);
-        return html;
-    }
-
-    // ── Private helpers ───────────────────────────────────────────────────────
-
-    private static string StripFrontMatter(string markdown)
-    {
-        var trimmed = markdown.TrimStart();
-        if (!trimmed.StartsWith("---")) return markdown;
-
-        var firstNewline = trimmed.IndexOf('\n');
-        if (firstNewline < 0) return markdown;
-
-        var closingIndex = trimmed.IndexOf("\n---", firstNewline);
-        if (closingIndex < 0) return markdown;
-
-        var bodyStart = closingIndex + 4;
-        if (bodyStart < trimmed.Length && trimmed[bodyStart] == '\r') bodyStart++;
-        if (bodyStart < trimmed.Length && trimmed[bodyStart] == '\n') bodyStart++;
-
-        return trimmed[bodyStart..];
-    }
-
-    private static string WrapImages(string html)
-    {
-        const string ZoomSvg =
-            "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\" " +
-            "viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" " +
-            "stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\">" +
-            "<circle cx=\"11\" cy=\"11\" r=\"8\"/>" +
-            "<line x1=\"21\" y1=\"21\" x2=\"16.65\" y2=\"16.65\"/>" +
-            "<line x1=\"11\" y1=\"8\" x2=\"11\" y2=\"14\"/>" +
-            "<line x1=\"8\" y1=\"11\" x2=\"14\" y2=\"11\"/>" +
-            "</svg>";
-
-        return Regex.Replace(
-            html,
-            @"<img([^>]*?)(?:\s*/?)?>",
-            $"<span class=\"project-img-wrap\"><img$1><span class=\"project-img-hint\" aria-hidden=\"true\">{ZoomSvg}</span></span>");
-    }
-
-    private string RewriteRelativeImages(string markdown, string slug)
-    {
-        return Regex.Replace(
-            markdown,
-            @"!\[([^\]]*)\]\((?!https?://|//)([^)]+)\)",
-            m =>
-            {
-                var alt  = m.Groups[1].Value;
-                var path = m.Groups[2].Value.TrimStart('.', '/');
-                var url  = _dataSource.ResolveAssetUrl(slug, path);
-                return $"![{alt}]({url})";
-            });
-    }
-
-    /// <summary>
-    /// Rewrites bare relative <c>href</c> values in rendered HTML to absolute
-    /// Blazor routes (<c>/programming/{slug}/{stem}</c>).
-    /// </summary>
-    private static string RewriteRelativeLinks(string html, string slug)
-    {
-        return Regex.Replace(
-            html,
-            @"href=""(?!https?://|//|[/#])([^""]+)""",
-            m => $"href=\"/programming/{Uri.EscapeDataString(slug)}/{m.Groups[1].Value}\"");
-    }
-
-    private static string? ExtractFrontMatterTitle(string markdown)
-    {
-        var trimmed = markdown.TrimStart();
-        if (!trimmed.StartsWith("---")) return null;
-
-        var firstNewline = trimmed.IndexOf('\n');
-        if (firstNewline < 0) return null;
-
-        var closingIndex = trimmed.IndexOf("\n---", firstNewline);
-        if (closingIndex < 0) return null;
-
-        var frontMatter = trimmed[..closingIndex];
-        var match = Regex.Match(
-            frontMatter,
-            @"^title:\s*""?([^""\r\n]+)""?\s*$",
-            RegexOptions.Multiline);
-        return match.Success ? match.Groups[1].Value.Trim() : null;
-    }
-
-    private static string TitleCaseFromSlug(string slug) =>
-        string.Join(" ", slug.Split('-')
-            .Select(w => w.Length > 0 ? char.ToUpper(w[0]) + w[1..] : w));
+    private string ProcessMarkdown(string raw, string slug, bool rewriteLinks) =>
+        MarkdownProcessor.Process(
+            raw,
+            slug,
+            rewriteLinks,
+            resolveAssetUrl: _dataSource.ResolveAssetUrl,
+            imgWrapClass:    "project-img-wrap",
+            baseRoute:       "programming");
 }
