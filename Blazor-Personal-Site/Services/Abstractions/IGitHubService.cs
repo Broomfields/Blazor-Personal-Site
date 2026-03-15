@@ -15,9 +15,4 @@ public interface IGitHubService
     /// Returns null if the URL is empty, unparseable, or the API call fails.
     /// </summary>
     Task<GitHubRepoStats?> FetchRepoStatsAsync(string? repoUrl);
-
-    /// <summary>
-    /// Pre-warms the stats cache for every repository URL provided.
-    /// </summary>
-    Task WarmCacheAsync(IEnumerable<string?> repoUrls);
 }

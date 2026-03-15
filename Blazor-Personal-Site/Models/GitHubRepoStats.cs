@@ -12,23 +12,11 @@ public class GitHubRepoStats
     /// <summary>Total number of forks.</summary>
     public int Forks { get; set; }
 
-    /// <summary>Number of watchers subscribed to the repository.</summary>
-    public int Watchers { get; set; }
-
     /// <summary>Number of open issues (includes pull requests in the GitHub API count).</summary>
     public int OpenIssues { get; set; }
 
-    /// <summary>
-    /// Primary language as reported by GitHub (e.g. "Lua", "C#").
-    /// Null when the repo has no detected language.
-    /// </summary>
-    public string? Language { get; set; }
-
     /// <summary>ISO 8601 timestamp of the most recent push to the repository.</summary>
     public string? PushedAt { get; set; }
-
-    /// <summary>Canonical HTML URL of the repository.</summary>
-    public string? HtmlUrl { get; set; }
 
     /// <summary>
     /// GitHub repository topics (labels), e.g. ["game", "lua", "chess"].

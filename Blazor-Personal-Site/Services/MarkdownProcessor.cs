@@ -85,12 +85,8 @@ public static partial class MarkdownProcessor
 
     // ── Front matter ──────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Strips the YAML front matter block (<c>--- … ---</c>) from the top of a
-    /// markdown string and returns the remaining body content.
-    /// Returns the input unchanged if no valid front matter block is found.
-    /// </summary>
-    public static string StripFrontMatter(string markdown)
+    // Strips the YAML front matter block (--- … ---) from the top of a markdown string.
+    private static string StripFrontMatter(string markdown)
     {
         var trimmed = markdown.TrimStart();
         if (!TryFindFrontMatterBounds(trimmed, out _, out var bodyStart))

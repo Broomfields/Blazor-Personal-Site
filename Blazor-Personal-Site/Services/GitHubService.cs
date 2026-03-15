@@ -72,19 +72,6 @@ public class GitHubService : IGitHubService
         return stats;
     }
 
-    /// <summary>
-    /// Pre-warms the stats cache for every project that has a <c>repo</c> URL.
-    /// </summary>
-    public async Task WarmCacheAsync(IEnumerable<string?> repoUrls)
-    {
-        var tasks = repoUrls
-            .Where(u => !string.IsNullOrWhiteSpace(u))
-            .Select(u => FetchRepoStatsAsync(u))
-            .ToList();
-
-        await Task.WhenAll(tasks);
-    }
-
     // ── Private helpers ───────────────────────────────────────────────────────
 
     private async Task<GitHubRepoStats?> FetchMainStatsAsync(
@@ -113,12 +100,8 @@ public class GitHubService : IGitHubService
             {
                 Stars      = root.TryGetProperty("stargazers_count",  out var s)  ? s.GetInt32()  : 0,
                 Forks      = root.TryGetProperty("forks_count",       out var f)  ? f.GetInt32()  : 0,
-                Watchers   = root.TryGetProperty("watchers_count",    out var w)  ? w.GetInt32()  : 0,
                 OpenIssues = root.TryGetProperty("open_issues_count", out var oi) ? oi.GetInt32() : 0,
-                Language   = root.TryGetProperty("language",          out var l)  && l.ValueKind != JsonValueKind.Null
-                                 ? l.GetString() : null,
                 PushedAt   = root.TryGetProperty("pushed_at",         out var p)  ? p.GetString() : null,
-                HtmlUrl    = root.TryGetProperty("html_url",          out var h)  ? h.GetString() : null,
                 Topics     = topics,
             };
         }
