@@ -608,8 +608,7 @@ else
         if (_manifest is null) return;
 
         var tasks = _manifest.Builds
-            .Where(b => b.Subpages is { Count: > 0 })
-            .SelectMany(b => b.Subpages!.Select(sp => WarmSubPageTitleAsync(b.Slug, sp)))
+            .SelectMany(b => (b.Subpages ?? []).Select(sp => WarmSubPageTitleAsync(b.Slug, sp)))
             .ToList();
 
         await Task.WhenAll(tasks);

@@ -217,7 +217,7 @@ public class GitHubService
             var parts = uri.AbsolutePath.Trim('/').Split('/');
             return parts.Length >= 2 ? $"{parts[0]}/{parts[1]}" : null;
         }
-        catch
+        catch (UriFormatException)
         {
             return null;
         }
