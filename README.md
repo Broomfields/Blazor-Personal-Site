@@ -11,6 +11,7 @@ Look, every developer has a personal site. This is mine.
 
 </div>
 
+Built on .NET 8 Blazor Server with MudBlazor, which probably tells you something about me already. It's a living showcase — programming projects, physical builds, and fiction writing, each updated as the repos behind them move forward. Right now it's all hobby stuff. Maybe some of it turns into something more eventually. That's the hope, anyway — especially on the writing side.
 
 The **PS-** prefix stands for Personal Site — an internal convention that ties this repo and its CMS siblings together as a family. **Forge & Fable** is the internal project name; thematic with what the site is doing, but more of a behind-the-scenes label than something splashed across the front page.
 
