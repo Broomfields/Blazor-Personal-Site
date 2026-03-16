@@ -203,7 +203,7 @@ public class MarkdownProcessorTests
     {
         var raw = "![alt](./photo.jpg)";
 
-        var result = Process(raw, "my-build", resolveAssetUrl: (slug, path) => $"https://cdn.example.com/{slug}/{path}");
+        var result = Process(raw, "my-build", resolveAssetUrl: (entrySlug, assetPath) => $"https://cdn.example.com/{entrySlug}/{assetPath}");
 
         Assert.Contains("https://cdn.example.com/my-build/photo.jpg", result);
         Assert.DoesNotContain("./photo.jpg", result);
@@ -282,7 +282,7 @@ public class MarkdownProcessorTests
         var result = Process(
             raw, "my-slug",
             rewriteLinks:    true,
-            resolveAssetUrl: (slug, path) => $"/cdn/{slug}/{path}",
+            resolveAssetUrl: (entrySlug, assetPath) => $"/cdn/{entrySlug}/{assetPath}",
             imgCssPrefix:    "build-img",
             baseRoute:       "builds");
 
@@ -303,7 +303,7 @@ public class MarkdownProcessorTests
         string imgCssPrefix = "test-img",
         string baseRoute = "test")
     {
-        resolveAssetUrl ??= (_, path) => $"https://cdn.example.com/{path}";
+        resolveAssetUrl ??= (_, assetPath) => $"https://cdn.example.com/{assetPath}";
         return MarkdownProcessor.Process(raw, slug, rewriteLinks, resolveAssetUrl, imgCssPrefix, baseRoute);
     }
 

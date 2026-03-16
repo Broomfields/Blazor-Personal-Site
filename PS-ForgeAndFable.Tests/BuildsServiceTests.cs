@@ -17,7 +17,7 @@ public class BuildsServiceTests
     [Fact]
     public async Task FetchManifestAsync_ValidJson_ReturnsDeserializedManifest()
     {
-        _dataSource.Setup(d => d.FetchManifestJsonAsync())
+        _dataSource.Setup(source => source.FetchManifestJsonAsync())
                    .ReturnsAsync("""{"builds":[{"slug":"test-build","title":"Test Build"}]}""");
 
         var result = await CreateSut().FetchManifestAsync();
@@ -31,7 +31,7 @@ public class BuildsServiceTests
     [Fact]
     public async Task FetchManifestAsync_EmptyJson_ReturnsNull()
     {
-        _dataSource.Setup(d => d.FetchManifestJsonAsync()).ReturnsAsync("");
+        _dataSource.Setup(source => source.FetchManifestJsonAsync()).ReturnsAsync("");
 
         var result = await CreateSut().FetchManifestAsync();
 
@@ -41,7 +41,7 @@ public class BuildsServiceTests
     [Fact]
     public async Task FetchManifestAsync_WhitespaceJson_ReturnsNull()
     {
-        _dataSource.Setup(d => d.FetchManifestJsonAsync()).ReturnsAsync("   ");
+        _dataSource.Setup(source => source.FetchManifestJsonAsync()).ReturnsAsync("   ");
 
         var result = await CreateSut().FetchManifestAsync();
 
@@ -51,7 +51,7 @@ public class BuildsServiceTests
     [Fact]
     public async Task FetchManifestAsync_DataSourceReturnsNull_ReturnsNull()
     {
-        _dataSource.Setup(d => d.FetchManifestJsonAsync()).ReturnsAsync((string?)null);
+        _dataSource.Setup(source => source.FetchManifestJsonAsync()).ReturnsAsync((string?)null);
 
         var result = await CreateSut().FetchManifestAsync();
 
@@ -61,7 +61,7 @@ public class BuildsServiceTests
     [Fact]
     public async Task FetchManifestAsync_InvalidJson_ReturnsNull()
     {
-        _dataSource.Setup(d => d.FetchManifestJsonAsync()).ReturnsAsync("not valid json {{{{");
+        _dataSource.Setup(source => source.FetchManifestJsonAsync()).ReturnsAsync("not valid json {{{{");
 
         var result = await CreateSut().FetchManifestAsync();
 
@@ -71,7 +71,7 @@ public class BuildsServiceTests
     [Fact]
     public async Task FetchManifestAsync_EmptyBuildsArray_ReturnsManifestWithNoBuilds()
     {
-        _dataSource.Setup(d => d.FetchManifestJsonAsync())
+        _dataSource.Setup(source => source.FetchManifestJsonAsync())
                    .ReturnsAsync("""{"builds":[]}""");
 
         var result = await CreateSut().FetchManifestAsync();
@@ -83,14 +83,14 @@ public class BuildsServiceTests
     [Fact]
     public async Task FetchManifestAsync_CalledTwice_OnlyFetchesFromDataSourceOnce()
     {
-        _dataSource.Setup(d => d.FetchManifestJsonAsync())
+        _dataSource.Setup(source => source.FetchManifestJsonAsync())
                    .ReturnsAsync("""{"builds":[]}""");
         var sut = CreateSut();
 
         await sut.FetchManifestAsync();
         await sut.FetchManifestAsync();
 
-        _dataSource.Verify(d => d.FetchManifestJsonAsync(), Times.Once);
+        _dataSource.Verify(source => source.FetchManifestJsonAsync(), Times.Once);
     }
 
     // ── FetchBuildHtmlAsync ───────────────────────────────────────────────────
@@ -98,10 +98,10 @@ public class BuildsServiceTests
     [Fact]
     public async Task FetchBuildHtmlAsync_DataSourceReturnsNull_ReturnsNull()
     {
-        _dataSource.Setup(d => d.FetchMarkdownAsync("my-build", "my-build.md"))
+        _dataSource.Setup(source => source.FetchMarkdownAsync("my-build", "my-build.md"))
                    .ReturnsAsync((string?)null);
-        _dataSource.Setup(d => d.ResolveAssetUrl(It.IsAny<string>(), It.IsAny<string>()))
-                   .Returns((string slug, string path) => $"/cdn/{slug}/{path}");
+        _dataSource.Setup(source => source.ResolveAssetUrl(It.IsAny<string>(), It.IsAny<string>()))
+                   .Returns((string entrySlug, string assetPath) => $"/cdn/{entrySlug}/{assetPath}");
 
         var result = await CreateSut().FetchBuildHtmlAsync("my-build");
 
@@ -111,10 +111,10 @@ public class BuildsServiceTests
     [Fact]
     public async Task FetchBuildHtmlAsync_ValidMarkdown_ReturnsHtmlString()
     {
-        _dataSource.Setup(d => d.FetchMarkdownAsync("my-build", "my-build.md"))
+        _dataSource.Setup(source => source.FetchMarkdownAsync("my-build", "my-build.md"))
                    .ReturnsAsync("# My Build\n\nSome content here.");
-        _dataSource.Setup(d => d.ResolveAssetUrl(It.IsAny<string>(), It.IsAny<string>()))
-                   .Returns((string slug, string path) => $"/cdn/{slug}/{path}");
+        _dataSource.Setup(source => source.ResolveAssetUrl(It.IsAny<string>(), It.IsAny<string>()))
+                   .Returns((string entrySlug, string assetPath) => $"/cdn/{entrySlug}/{assetPath}");
 
         var result = await CreateSut().FetchBuildHtmlAsync("my-build");
 
@@ -126,10 +126,10 @@ public class BuildsServiceTests
     [Fact]
     public async Task FetchBuildHtmlAsync_MarkdownWithFrontMatter_FrontMatterIsStripped()
     {
-        _dataSource.Setup(d => d.FetchMarkdownAsync("slug", "slug.md"))
+        _dataSource.Setup(source => source.FetchMarkdownAsync("slug", "slug.md"))
                    .ReturnsAsync("---\ntitle: \"My Build\"\n---\n# Heading");
-        _dataSource.Setup(d => d.ResolveAssetUrl(It.IsAny<string>(), It.IsAny<string>()))
-                   .Returns((string s, string p) => $"/cdn/{s}/{p}");
+        _dataSource.Setup(source => source.ResolveAssetUrl(It.IsAny<string>(), It.IsAny<string>()))
+                   .Returns((string entrySlug, string assetPath) => $"/cdn/{entrySlug}/{assetPath}");
 
         var result = await CreateSut().FetchBuildHtmlAsync("slug");
 
@@ -141,25 +141,25 @@ public class BuildsServiceTests
     [Fact]
     public async Task FetchBuildHtmlAsync_CalledTwiceWithSameSlug_FetchesMarkdownOnce()
     {
-        _dataSource.Setup(d => d.FetchMarkdownAsync("slug", "slug.md"))
+        _dataSource.Setup(source => source.FetchMarkdownAsync("slug", "slug.md"))
                    .ReturnsAsync("# Content");
-        _dataSource.Setup(d => d.ResolveAssetUrl(It.IsAny<string>(), It.IsAny<string>()))
-                   .Returns((string s, string p) => $"/cdn/{s}/{p}");
+        _dataSource.Setup(source => source.ResolveAssetUrl(It.IsAny<string>(), It.IsAny<string>()))
+                   .Returns((string entrySlug, string assetPath) => $"/cdn/{entrySlug}/{assetPath}");
         var sut = CreateSut();
 
         await sut.FetchBuildHtmlAsync("slug");
         await sut.FetchBuildHtmlAsync("slug");
 
-        _dataSource.Verify(d => d.FetchMarkdownAsync("slug", "slug.md"), Times.Once);
+        _dataSource.Verify(source => source.FetchMarkdownAsync("slug", "slug.md"), Times.Once);
     }
 
     [Fact]
     public async Task FetchBuildHtmlAsync_UsesBuildsImgCssPrefix()
     {
-        _dataSource.Setup(d => d.FetchMarkdownAsync("slug", "slug.md"))
+        _dataSource.Setup(source => source.FetchMarkdownAsync("slug", "slug.md"))
                    .ReturnsAsync("![alt](https://example.com/img.jpg)");
-        _dataSource.Setup(d => d.ResolveAssetUrl(It.IsAny<string>(), It.IsAny<string>()))
-                   .Returns((string s, string p) => $"/cdn/{s}/{p}");
+        _dataSource.Setup(source => source.ResolveAssetUrl(It.IsAny<string>(), It.IsAny<string>()))
+                   .Returns((string entrySlug, string assetPath) => $"/cdn/{entrySlug}/{assetPath}");
 
         var result = await CreateSut().FetchBuildHtmlAsync("slug");
 
@@ -172,10 +172,10 @@ public class BuildsServiceTests
     [Fact]
     public async Task FetchSubPageHtmlAsync_DataSourceReturnsNull_ReturnsNull()
     {
-        _dataSource.Setup(d => d.FetchMarkdownAsync("slug", "details.md"))
+        _dataSource.Setup(source => source.FetchMarkdownAsync("slug", "details.md"))
                    .ReturnsAsync((string?)null);
-        _dataSource.Setup(d => d.ResolveAssetUrl(It.IsAny<string>(), It.IsAny<string>()))
-                   .Returns((string s, string p) => $"/cdn/{s}/{p}");
+        _dataSource.Setup(source => source.ResolveAssetUrl(It.IsAny<string>(), It.IsAny<string>()))
+                   .Returns((string entrySlug, string assetPath) => $"/cdn/{entrySlug}/{assetPath}");
 
         var result = await CreateSut().FetchSubPageHtmlAsync("slug", "details");
 
@@ -185,10 +185,10 @@ public class BuildsServiceTests
     [Fact]
     public async Task FetchSubPageHtmlAsync_ValidMarkdown_ReturnsHtml()
     {
-        _dataSource.Setup(d => d.FetchMarkdownAsync("slug", "details.md"))
+        _dataSource.Setup(source => source.FetchMarkdownAsync("slug", "details.md"))
                    .ReturnsAsync("## Details\n\nContent here.");
-        _dataSource.Setup(d => d.ResolveAssetUrl(It.IsAny<string>(), It.IsAny<string>()))
-                   .Returns((string s, string p) => $"/cdn/{s}/{p}");
+        _dataSource.Setup(source => source.ResolveAssetUrl(It.IsAny<string>(), It.IsAny<string>()))
+                   .Returns((string entrySlug, string assetPath) => $"/cdn/{entrySlug}/{assetPath}");
 
         var result = await CreateSut().FetchSubPageHtmlAsync("slug", "details");
 
@@ -200,10 +200,10 @@ public class BuildsServiceTests
     public async Task FetchSubPageHtmlAsync_DoesNotRewriteRelativeLinks()
     {
         // Sub-pages use rewriteLinks: false, so relative hrefs should remain as-is.
-        _dataSource.Setup(d => d.FetchMarkdownAsync("slug", "subpage.md"))
+        _dataSource.Setup(source => source.FetchMarkdownAsync("slug", "subpage.md"))
                    .ReturnsAsync("[link text](other-page)");
-        _dataSource.Setup(d => d.ResolveAssetUrl(It.IsAny<string>(), It.IsAny<string>()))
-                   .Returns((string s, string p) => $"/cdn/{s}/{p}");
+        _dataSource.Setup(source => source.ResolveAssetUrl(It.IsAny<string>(), It.IsAny<string>()))
+                   .Returns((string entrySlug, string assetPath) => $"/cdn/{entrySlug}/{assetPath}");
 
         var result = await CreateSut().FetchSubPageHtmlAsync("slug", "subpage");
 
@@ -217,7 +217,7 @@ public class BuildsServiceTests
     [Fact]
     public async Task FetchSubPageTitleAsync_DataSourceReturnsNull_ReturnsNull()
     {
-        _dataSource.Setup(d => d.FetchMarkdownAsync("slug", "subpage.md"))
+        _dataSource.Setup(source => source.FetchMarkdownAsync("slug", "subpage.md"))
                    .ReturnsAsync((string?)null);
 
         var result = await CreateSut().FetchSubPageTitleAsync("slug", "subpage");
@@ -228,7 +228,7 @@ public class BuildsServiceTests
     [Fact]
     public async Task FetchSubPageTitleAsync_FrontMatterHasTitle_ReturnsThatTitle()
     {
-        _dataSource.Setup(d => d.FetchMarkdownAsync("slug", "print-settings.md"))
+        _dataSource.Setup(source => source.FetchMarkdownAsync("slug", "print-settings.md"))
                    .ReturnsAsync("---\ntitle: \"Print Settings\"\n---\nContent.");
 
         var result = await CreateSut().FetchSubPageTitleAsync("slug", "print-settings");
@@ -239,7 +239,7 @@ public class BuildsServiceTests
     [Fact]
     public async Task FetchSubPageTitleAsync_NoFrontMatterTitle_ReturnsTitleCasedSlug()
     {
-        _dataSource.Setup(d => d.FetchMarkdownAsync("slug", "print-settings.md"))
+        _dataSource.Setup(source => source.FetchMarkdownAsync("slug", "print-settings.md"))
                    .ReturnsAsync("# Just a heading\n\nContent.");
 
         var result = await CreateSut().FetchSubPageTitleAsync("slug", "print-settings");
@@ -250,14 +250,14 @@ public class BuildsServiceTests
     [Fact]
     public async Task FetchSubPageTitleAsync_CalledTwice_FetchesMarkdownOnce()
     {
-        _dataSource.Setup(d => d.FetchMarkdownAsync("slug", "subpage.md"))
+        _dataSource.Setup(source => source.FetchMarkdownAsync("slug", "subpage.md"))
                    .ReturnsAsync("---\ntitle: \"Title\"\n---\nContent.");
         var sut = CreateSut();
 
         await sut.FetchSubPageTitleAsync("slug", "subpage");
         await sut.FetchSubPageTitleAsync("slug", "subpage");
 
-        _dataSource.Verify(d => d.FetchMarkdownAsync("slug", "subpage.md"), Times.Once);
+        _dataSource.Verify(source => source.FetchMarkdownAsync("slug", "subpage.md"), Times.Once);
     }
 
     // ── ResolveCdnUrl ─────────────────────────────────────────────────────────
@@ -265,7 +265,7 @@ public class BuildsServiceTests
     [Fact]
     public void ResolveCdnUrl_DelegatesToDataSource()
     {
-        _dataSource.Setup(d => d.ResolveAssetUrl("slug", "image.jpg"))
+        _dataSource.Setup(source => source.ResolveAssetUrl("slug", "image.jpg"))
                    .Returns("https://cdn.example.com/slug/image.jpg");
 
         var result = CreateSut().ResolveCdnUrl("slug", "image.jpg");
