@@ -1,0 +1,253 @@
+@using ForgeAndFable.Models
+@using ForgeAndFable.Services
+@inject IGitHubService GitHubService
+
+@if (_hasRepo)
+{
+    <div class="gh-panel">
+
+        @if (_isLoading)
+        {
+            <div class="gh-panel-loading">
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Style="width:16px;height:16px;" />
+            </div>
+        }
+        else if (_stats is not null)
+        {
+            <!-- ═══════════ CARD GRID ═══════════ -->
+            <div class="gh-cards">
+
+                <!-- ── Card 1: Repo stats + link ── -->
+                <div class="gh-card gh-card--stats">
+                    <p class="gh-card-label">Repository</p>
+
+                    <a class="gh-repo-link"
+                       href="@RepoUrl"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       aria-label="View on GitHub">
+                        <svg class="gh-repo-link-logo" height="18" viewBox="0 0 16 16" width="18" fill="currentColor" aria-hidden="true">
+                            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+                        </svg>
+                        <span>View on GitHub</span>
+                        <MudIcon Icon="@Icons.Material.Filled.OpenInNew" Size="Size.Small" Class="gh-repo-link-ext" />
+                    </a>
+
+                    <!-- ── Topics ── -->
+                    @if (_stats.Topics is { Count: > 0 })
+                    {
+                        <div class="gh-topics">
+                            @foreach (var topic in _stats.Topics)
+                            {
+                                <a class="gh-topic-chip"
+                                   href="https://github.com/topics/@topic"
+                                   target="_blank"
+                                   rel="noopener noreferrer">@topic</a>
+                            }
+                        </div>
+                    }
+
+                    <div class="gh-stats-grid">
+                        <div class="gh-stat-item">
+                            <svg class="gh-stat-icon" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                                <path d="M8 .25a.75.75 0 01.673.418l1.882 3.815 4.21.612a.75.75 0 01.416 1.279l-3.046 2.97.719 4.192a.75.75 0 01-1.088.791L8 12.347l-3.766 1.98a.75.75 0 01-1.088-.79l.72-4.194L.818 6.374a.75.75 0 01.416-1.28l4.21-.611L7.327.668A.75.75 0 018 .25z" />
+                            </svg>
+                            <span class="gh-stat-val">@FormatCount(_stats.Stars)</span>
+                            <span class="gh-stat-lbl">Stars</span>
+                        </div>
+                        <div class="gh-stat-item">
+                            <svg class="gh-stat-icon" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                                <path d="M5 5.372v.878c0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75v-.878a2.25 2.25 0 111.5 0v.878a2.25 2.25 0 01-2.25 2.25h-1.5v2.128a2.251 2.251 0 11-1.5 0V8.5h-1.5A2.25 2.25 0 013.5 6.25v-.878a2.25 2.25 0 111.5 0zM5 3.25a.75.75 0 10-1.5 0 .75.75 0 001.5 0zm6.75.75a.75.75 0 100-1.5.75.75 0 000 1.5zm-3 8.75a.75.75 0 10-1.5 0 .75.75 0 001.5 0z" />
+                            </svg>
+                            <span class="gh-stat-val">@FormatCount(_stats.Forks)</span>
+                            <span class="gh-stat-lbl">Forks</span>
+                        </div>
+                        @if (_stats.OpenIssues > 0)
+                        {
+                            <div class="gh-stat-item">
+                                <svg class="gh-stat-icon" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                                    <path d="M8 9.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" /><path fill-rule="evenodd" d="M8 0a8 8 0 100 16A8 8 0 008 0zM1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0z" />
+                                </svg>
+                                <span class="gh-stat-val">@FormatCount(_stats.OpenIssues)</span>
+                                <span class="gh-stat-lbl">Issues</span>
+                            </div>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(_pushedDisplay))
+                    {
+                        <span class="gh-pushed">
+                            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0zM8 0a8 8 0 100 16A8 8 0 008 0zm.5 4.75a.75.75 0 00-1.5 0v3.5c0 .414.336.75.75.75h2.5a.75.75 0 000-1.5H8.5v-2.75z" />
+                            </svg>
+                            Updated @_pushedDisplay
+                        </span>
+                    }
+                </div>
+
+                <!-- ── Card 2: Language donut ── -->
+                @if (_stats.Languages is { Count: > 0 })
+                {
+                    var total = (double)_stats.Languages.Values.Sum();
+
+                    <div class="gh-card gh-card--langs">
+                        <p class="gh-card-label">Languages</p>
+
+                        <div class="gh-donut-wrap" aria-hidden="true">
+                            <div class="gh-donut" style="background:@BuildDonutGradient(_stats.Languages)"></div>
+                        </div>
+
+                        <div class="gh-lang-legend">
+                            @foreach (var lang in _stats.Languages.Take(6))
+                            {
+                                var pct = lang.Value / total * 100;
+                                var col = GetLangColor(lang.Key);
+                                <span class="gh-lang-legend-item">
+                                    <span class="gh-lang-dot" style="background:@col"></span>
+                                    <span class="gh-lang-name">@lang.Key</span>
+                                    <span class="gh-lang-pct">@pct.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)%</span>
+                                </span>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- ── Card 3: Recent activity ── -->
+                @if (_stats.RecentCommits is { Count: > 0 })
+                {
+                    <div class="gh-card gh-card--activity">
+                        <p class="gh-card-label">Recent Activity</p>
+                        <ul class="gh-commits" aria-label="Recent commits">
+                            @foreach (var commit in _stats.RecentCommits)
+                            {
+                                <li class="gh-commit">
+                                    <span class="gh-commit-dot"></span>
+                                    <span class="gh-commit-msg" title="@commit.Message">@TruncateMessage(commit.Message)</span>
+                                    <span class="gh-commit-date">@FormatRelativeDate(commit.Date)</span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+            </div>
+
+        }
+
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public string? RepoUrl { get; set; }
+
+    private bool _hasRepo => !string.IsNullOrWhiteSpace(RepoUrl);
+
+    private GitHubRepoStats? _stats;
+    private bool _isLoading = true;
+    private string? _pushedDisplay;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!_hasRepo) return;
+
+        _isLoading = true;
+        _stats   = null;
+
+        _stats   = await GitHubService.FetchRepoStatsAsync(RepoUrl);
+        _isLoading = false;
+
+        if (_stats?.PushedAt is not null &&
+            DateTime.TryParse(_stats.PushedAt, null,
+                System.Globalization.DateTimeStyles.RoundtripKind, out var pushed))
+        {
+            _pushedDisplay = FormatRelativeDate(pushed);
+        }
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private static string FormatCount(int n)
+    {
+        if (n >= 1000) return $"{n / 1000.0:0.#}k";
+        return n.ToString();
+    }
+
+    private static string FormatRelativeDate(DateTime dt)
+    {
+        var ago = DateTime.UtcNow - dt.ToUniversalTime();
+        if (ago.TotalDays < 1)   return "today";
+        if (ago.TotalDays < 2)   return "yesterday";
+        if (ago.TotalDays < 7)   return $"{(int)ago.TotalDays}d ago";
+        if (ago.TotalDays < 30)  return $"{(int)(ago.TotalDays / 7)}w ago";
+        if (ago.TotalDays < 365) return $"{(int)(ago.TotalDays / 30)}mo ago";
+        return $"{(int)(ago.TotalDays / 365)}y ago";
+    }
+
+    private static string TruncateMessage(string msg, int max = 58)
+    {
+        if (string.IsNullOrEmpty(msg)) return msg;
+        return msg.Length <= max ? msg : msg[..max].TrimEnd() + "…";
+    }
+
+    // Builds a CSS conic-gradient string from the language byte counts.
+    private static string BuildDonutGradient(Dictionary<string, long> languages)
+    {
+        var total = (double)languages.Values.Sum();
+        var ic    = System.Globalization.CultureInfo.InvariantCulture;
+        var sb    = new System.Text.StringBuilder("conic-gradient(");
+        double cum = 0;
+        bool first = true;
+
+        foreach (var (lang, bytes) in languages)
+        {
+            var pct   = bytes / total * 100;
+            var color = GetLangColor(lang);
+            var start = cum.ToString("0.##", ic);
+            cum += pct;
+            var end = cum.ToString("0.##", ic);
+
+            if (!first) sb.Append(", ");
+            sb.Append($"{color} {start}% {end}%");
+            first = false;
+        }
+
+        sb.Append(')');
+        return sb.ToString();
+    }
+
+    // Language colours adjusted for dark-mode legibility.
+    // GitHub's canonical colours are designed for light backgrounds; several
+    // (Lua navy, C grey, CSS purple, etc.) are near-invisible on dark cards,
+    // so we use brightened equivalents that keep the hue recognisable.
+    private static string GetLangColor(string language) =>
+        language.ToLowerInvariant() switch
+        {
+            "lua"        => "#4D6FE0",   // canonical #000080 — brightened to visible blue
+            "c#"         => "#3AC43A",   // canonical #178600 — slightly brighter green
+            "python"     => "#4B8FD4",   // canonical #3572A5 — lightened
+            "javascript" => "#F1E05A",   // fine as-is (bright yellow)
+            "typescript" => "#4D8FD4",   // canonical #3178C6 — lightened
+            "rust"       => "#DEA584",   // fine as-is (warm tan)
+            "go"         => "#00C8E6",   // canonical #00ADD8 — lightened
+            "java"       => "#D4933A",   // canonical #B07219 — lightened
+            "c++"        => "#F34B7D",   // fine as-is (pink-red)
+            "c"          => "#9090AA",   // canonical #555555 — brightened to visible grey
+            "html"       => "#E34C26",   // fine as-is (orange-red)
+            "css"        => "#8B70CC",   // canonical #563D7C — brightened purple
+            "shell"      => "#89E051",   // fine as-is (bright green)
+            "bash"       => "#89E051",
+            "gdscript"   => "#4E8BAA",   // canonical #355570 — lightened
+            "ruby"       => "#E04040",   // canonical #701516 — brightened red
+            "swift"      => "#F05138",   // fine as-is
+            "kotlin"     => "#A97BFF",   // fine as-is (soft violet)
+            "dart"       => "#00C8C0",   // canonical #00B4AB — lightened
+            "php"        => "#8090CC",   // canonical #4F5D95 — lightened
+            "elixir"     => "#B870D4",   // canonical #6E4A7E — brightened purple
+            "haskell"    => "#9878D4",   // canonical #5E5086 — brightened
+            "scala"      => "#E04060",   // canonical #C22D40 — brightened
+            "r"          => "#44AAEE",   // canonical #198CE7 — lightened
+            "makefile"   => "#6AAA30",   // canonical #427819 — lightened
+            "dockerfile" => "#6899B0",   // canonical #384D54 — lightened
+            _            => "#8A9BA8",
+        };
+}

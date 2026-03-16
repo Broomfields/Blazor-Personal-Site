@@ -27,8 +27,8 @@ The site is organised into a few distinct sections, each covering a different ar
 ## Running locally
 
 ```bash
-git clone https://github.com/broomfields/blazor-personal-site.git
-cd Blazor-Personal-Site
+git clone https://github.com/broomfields/PS-ForgeAndFable.git
+cd PS-ForgeAndFable
 dotnet run
 ```
 
