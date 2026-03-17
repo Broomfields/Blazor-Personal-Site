@@ -37,15 +37,19 @@ public static partial class MarkdownProcessor
     [GeneratedRegex(@"^title:\s*""?([^""\r\n]+)""?\s*$", RegexOptions.Multiline)]
     private static partial Regex FrontMatterTitleRegex();
 
+    [GeneratedRegex(@"```mermaid\r?\n([\s\S]*?)\r?\n```")]
+    private static partial Regex MermaidFenceRegex();
+
     // ── Public entry point ────────────────────────────────────────────────────
 
     /// <summary>
     /// Runs the full CMS markdown pipeline:
     ///   1. Strip YAML front matter.
-    ///   2. Rewrite relative image paths to resolved asset URLs.
-    ///   3. Convert markdown to HTML via Markdig.
-    ///   4. Wrap every &lt;img&gt; in a container span for layout/lightbox.
-    ///   5. Optionally rewrite relative href values to absolute Blazor routes.
+    ///   2. Rewrite mermaid fenced code blocks to raw HTML div blocks.
+    ///   3. Rewrite relative image paths to resolved asset URLs.
+    ///   4. Convert markdown to HTML via Markdig.
+    ///   5. Wrap every &lt;img&gt; in a container span for layout/lightbox.
+    ///   6. Optionally rewrite relative href values to absolute Blazor routes.
     /// </summary>
     /// <param name="raw">Raw markdown string (may include YAML front matter).</param>
     /// <param name="slug">Entry slug — used for URL resolution and route rewriting.</param>
@@ -75,6 +79,7 @@ public static partial class MarkdownProcessor
         string baseRoute)
     {
         var body = StripFrontMatter(raw);
+        body = RewriteMermaidFences(body);
         body = RewriteRelativeImages(body, slug, resolveAssetUrl);
         var html = Markdown.ToHtml(body, Pipeline);
         html = WrapImages(html, imgCssPrefix);
@@ -149,6 +154,20 @@ public static partial class MarkdownProcessor
 
         return true;
     }
+
+    /// <summary>
+    /// Converts mermaid fenced code blocks (```mermaid … ```) to raw HTML pre
+    /// blocks before the markdown is parsed. Using &lt;pre&gt; rather than &lt;div&gt; is
+    /// intentional: CommonMark classifies &lt;pre&gt; as a Type 1 HTML block, which
+    /// continues until &lt;/pre&gt; regardless of blank lines inside. A &lt;div&gt; would be
+    /// a Type 6 block, which terminates on any blank line — breaking diagrams that
+    /// contain blank lines between sections. The diagram source reaches the browser
+    /// unencoded, which is required for the Mermaid JS library to parse it correctly.
+    /// </summary>
+    private static string RewriteMermaidFences(string markdown) =>
+        MermaidFenceRegex().Replace(
+            markdown,
+            m => $"\n\n<pre class=\"mermaid\">\n{m.Groups[1].Value}\n</pre>\n\n");
 
     /// <summary>
     /// Wraps every &lt;img&gt; in the rendered HTML with a container span for

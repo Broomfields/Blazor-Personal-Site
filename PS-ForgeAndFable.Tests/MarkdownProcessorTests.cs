@@ -263,6 +263,97 @@ public class MarkdownProcessorTests
         Assert.Contains("slug%20with%20spaces", result);
     }
 
+    // ── Process — mermaid block rewriting ────────────────────────────────────
+
+    [Fact]
+    public void Process_MermaidFence_OutputsWrappingPre()
+    {
+        var raw = """
+            ```mermaid
+            graph LR
+                A --> B
+            ```
+            """;
+
+        var result = Process(raw, "slug");
+
+        Assert.Contains("<pre class=\"mermaid\">", result);
+        Assert.Contains("graph LR", result);
+    }
+
+    [Fact]
+    public void Process_MermaidFence_ContentIsNotHtmlEncoded()
+    {
+        // The --> arrow contains > which Markdig would encode as &gt; if it
+        // processed the block as a code fence. Converting to a raw HTML pre
+        // first ensures the content is passed through verbatim.
+        var raw = """
+            ```mermaid
+            graph LR
+                A -->|label| B
+            ```
+            """;
+
+        var result = Process(raw, "slug");
+
+        Assert.Contains("-->", result);
+        Assert.DoesNotContain("&gt;", result);
+    }
+
+    [Fact]
+    public void Process_MermaidFence_PreservesContentAcrossBlankLines()
+    {
+        // Blank lines inside a diagram must not truncate the output.
+        // <pre> is a CommonMark Type 1 HTML block (ends only at </pre>),
+        // so internal blank lines are safe. A <div> would be Type 6 and
+        // would be terminated by the first blank line.
+        var raw = """
+            ```mermaid
+            graph LR
+                subgraph "Group"
+                    A --> B
+                end
+
+                C --> D
+            ```
+            """;
+
+        var result = Process(raw, "slug");
+
+        Assert.Contains("C --> D", result);
+        Assert.DoesNotContain("language-mermaid", result);
+    }
+
+    [Fact]
+    public void Process_MermaidFence_DoesNotProduceCodeBlock()
+    {
+        var raw = """
+            ```mermaid
+            graph LR
+                A --> B
+            ```
+            """;
+
+        var result = Process(raw, "slug");
+
+        Assert.DoesNotContain("language-mermaid", result);
+    }
+
+    [Fact]
+    public void Process_NonMermaidFence_IsNotAffected()
+    {
+        var raw = """
+            ```csharp
+            var x = 1;
+            ```
+            """;
+
+        var result = Process(raw, "slug");
+
+        Assert.DoesNotContain("class=\"mermaid\"", result);
+        Assert.Contains("var x = 1", result);
+    }
+
     // ── Process — combined pipeline ───────────────────────────────────────────
 
     [Fact]
