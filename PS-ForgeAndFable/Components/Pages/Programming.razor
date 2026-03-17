@@ -4,6 +4,7 @@
 
 @inject IProgrammingService ProgrammingService
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 
 <PageTitle>@ComputedPageTitle</PageTitle>
 
@@ -115,6 +116,11 @@ else
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("renderMermaid");
+    }
 
     protected override async Task OnInitializedAsync()
     {

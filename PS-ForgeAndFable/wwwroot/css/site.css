@@ -133,6 +133,33 @@ body::before {
     color: var(--color-text-primary);
 }
 
+/* ── Mermaid diagrams ── */
+
+/*
+ * pre.mermaid is a code-block element repurposed as a diagram container.
+ * After Mermaid JS runs, the element's text is replaced with an <svg>.
+ * These rules override the generic pre/code styles that would otherwise
+ * apply (monospace font, code colouring, etc.) and ensure the SVG fills
+ * the container cleanly without extra space below it (line-height: 0).
+ *
+ * Specificity note: component-scoped pre rules carry an [b-xxxxxx]
+ * attribute selector; using .project-content pre.mermaid here adds a
+ * class selector that matches their specificity and site.css loads before
+ * the component bundle, so we use !important for the few conflicting
+ * properties rather than duplicating rules across four scoped files.
+ */
+.project-content pre.mermaid {
+    line-height: 0;
+    padding: 20px !important;
+    text-align: center;
+}
+
+.project-content pre.mermaid svg {
+    max-width: 100%;
+    height: auto;
+    display: inline-block;
+}
+
 /* ── Home Layout — viewport-fill flex for CareerNav stretch ── */
 
 /*
