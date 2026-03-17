@@ -61,7 +61,21 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0.2;
+}
+
+/* Hidden by default; revealed by the placeholder class whether set at render time or added by onerror */
+.build-card-placeholder-icon {
+    display: none;
+}
+
+.build-card-cover--placeholder .build-card-placeholder-icon {
+    display: flex;
+    color: rgba(176, 188, 202, 0.5);
+}
+
+.build-card-cover--placeholder ::deep svg {
+    width: 64px !important;
+    height: 64px !important;
 }
 
 /* ── Card body ── */
